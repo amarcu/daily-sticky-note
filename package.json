@@ -1,7 +1,7 @@
 {
   "name": "daily-sticky-note",
   "productName": "Daily Sticky Note",
-  "version": "1.3.1",
+  "version": "1.3.2",
   "description": "A tiny always-on-top sticky note task list. Local-first by default, with optional cloud sync via your own Firebase project.",
   "author": "amarcu",
   "license": "MIT",

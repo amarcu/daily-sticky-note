@@ -53,6 +53,9 @@ const pointsLabel = document.getElementById('pointsLabel');
 const progressFill = document.getElementById('progressFill');
 const toNextLabel = document.getElementById('toNextLabel');
 const toast = document.getElementById('toast');
+const updateBanner = document.getElementById('updateBanner');
+const updateText = document.getElementById('updateText');
+const updateBtn = document.getElementById('updateBtn');
 
 // Desktop build detection. The Tauri shell exposes a global `window.__TAURI__`
 // object (we opt into this with `withGlobalTauri` in tauri.conf.json); the plain
@@ -627,6 +630,31 @@ if (isDesktop) {
     appWindow.setSize(new LogicalSize(WINDOW_WIDTH, h)).catch((e) => console.error('resize failed', e));
   };
   new ResizeObserver(fitWindow).observe(document.body);
+
+  // On launch, ask whether a newer release exists; if so, show a banner that
+  // downloads, installs, and relaunches into it on one click (all handled on
+  // the Rust side). Silent if offline or the check fails.
+  const invoke = window.__TAURI__.core.invoke;
+  invoke('check_update')
+    .then((version) => {
+      if (!version) return;
+      updateText.textContent = t('updateReady', { v: version });
+      updateBtn.textContent = t('updateNow');
+      updateBanner.hidden = false;
+    })
+    .catch((e) => console.error('update check failed', e));
+
+  updateBtn.addEventListener('click', async () => {
+    updateBtn.disabled = true;
+    updateText.textContent = t('updating');
+    try {
+      await invoke('install_update'); // relaunches on success
+    } catch (e) {
+      console.error('update failed', e);
+      updateText.textContent = t('updateFailed');
+      updateBtn.disabled = false;
+    }
+  });
 } else {
   function clampPosition(pos) {
     const maxLeft = Math.max(0, window.innerWidth - note.offsetWidth - 8);

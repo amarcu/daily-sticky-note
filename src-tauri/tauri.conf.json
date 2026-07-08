@@ -1,10 +1,18 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Daily Sticky Note",
-  "version": "1.3.1",
+  "version": "1.3.2",
   "identifier": "com.amarcu.dailystickynote",
   "build": {
     "frontendDist": "../docs"
+  },
+  "plugins": {
+    "updater": {
+      "endpoints": [
+        "https://github.com/amarcu/daily-sticky-note/releases/latest/download/latest.json"
+      ],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEFENUM2OTQzRTRFNzRBMjUKUldRbFN1ZmtRMmxjcmV1ckNaN0Q5VnZSNWt3U3hCWVZJcGp2a2h6cWdJeElxcDR0WVdLNUI2d0YK"
+    }
   },
   "app": {
     "withGlobalTauri": true,
@@ -33,6 +41,7 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "createUpdaterArtifacts": true,
     "category": "Productivity",
     "shortDescription": "Always-on-top sticky note task list",
     "icon": [

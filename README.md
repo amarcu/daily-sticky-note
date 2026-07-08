@@ -69,6 +69,14 @@ developer" - expected for a personal app (right-click > Open on macOS;
 automatically by [`.github/workflows/release.yml`](.github/workflows/release.yml)
 whenever a `v*` tag is pushed.
 
+### Staying up to date
+
+Once installed, the desktop app **updates itself**: on launch it checks the
+latest release and, if there's a newer version, shows a banner that
+downloads, installs, and relaunches into it in one click. Nothing to
+re-run. (The one-liners above still work any time you'd rather update by
+hand.)
+
 ## Deploy the web version (optional)
 
 1. Push this folder to a GitHub repo.
@@ -185,11 +193,39 @@ the icons in `src-tauri/icons/`. Regenerate those from your own
 1024x1024 PNG any time with `npm run icon` (it reads `build/icon.png`,
 the placeholder that `build/make_icon.py` generates).
 
-This repo doesn't publish built installers anywhere - build your own copy
-and install it on your own machines. Since Firebase config lives in the
-running app rather than the source, the same build works identically for
-local-only use or cloud sync; nothing project-specific gets baked in at
-build time.
+You can also build your own copy this way and install it directly. Since
+Firebase config lives in the running app rather than the source, the same
+build works identically for local-only use or cloud sync; nothing
+project-specific gets baked in at build time.
+
+## Publishing a new version
+
+Releasing is a version bump plus a tag - CI does the rest (builds every
+platform, signs the update artifacts, and publishes the release that
+installed apps auto-update from):
+
+1. Bump the version in `package.json`, `src-tauri/tauri.conf.json`, and
+   `src-tauri/Cargo.toml` (keep the three in sync) and add a
+   `CHANGELOG.md` entry.
+2. Commit, then tag and push:
+   ```bash
+   git tag -a v1.3.3 -m "v1.3.3"
+   git push origin main --tags
+   ```
+3. The release workflow builds the macOS/Windows/Linux installers, signs
+   the updater artifacts, and publishes a release with a `latest.json`
+   manifest. Within a launch or two, installed apps notice it and offer
+   the update.
+
+### Update signing key
+
+Update artifacts are signed with a Tauri updater key (minisign) - separate
+from OS code signing, so it works on these unsigned builds. The **public**
+key is in `src-tauri/tauri.conf.json` (`plugins.updater.pubkey`); the
+**private** key lives in the repo secrets `TAURI_SIGNING_PRIVATE_KEY` and
+`TAURI_SIGNING_PRIVATE_KEY_PASSWORD`, with a local backup at
+`~/.tauri/daily-sticky-note-updater.key`. Keep it safe - losing it means
+existing installs won't accept future updates without a manual reinstall.
 
 ## Notes and limits
 

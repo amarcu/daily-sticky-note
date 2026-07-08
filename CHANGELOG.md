@@ -3,6 +3,17 @@
 All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.3.2]
+
+### Added
+
+- **In-app auto-update** (desktop). On launch the app checks the latest
+  GitHub release and, if a newer version exists, shows a banner that
+  downloads, installs, and relaunches into it on one click. Updates are
+  signed with the project's own updater key (independent of OS code
+  signing, so it works on the unsigned builds), and the release workflow
+  publishes the signed artifacts + `latest.json` manifest automatically.
+
 ## [1.3.1]
 
 ### Fixed

@@ -419,6 +419,42 @@ button:focus-visible {
   display: none;
 }
 
+/* Update banner (desktop only, shown when a newer version is available) */
+.update-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--accent);
+  color: var(--paper);
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-bottom: 12px;
+  font-size: 12px;
+}
+
+.update-banner span {
+  flex: 1;
+  min-width: 0;
+}
+
+.update-btn {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--paper);
+  background: var(--paper);
+  color: var(--accent);
+  border-radius: 5px;
+  padding: 4px 10px;
+  white-space: nowrap;
+}
+
+.update-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
 /* Language picker (top of the sync/settings panel) */
 .lang-row {
   display: flex;

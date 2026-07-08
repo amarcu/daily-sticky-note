@@ -10,6 +10,7 @@ use tauri::{
 };
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
 use tauri_plugin_notification::NotificationExt;
+use tauri_plugin_updater::UpdaterExt;
 
 const MAIN_WINDOW: &str = "main";
 
@@ -54,6 +55,40 @@ fn notify(app: AppHandle, title: String, body: String) {
         .show();
 }
 
+// Ask the update endpoint whether a newer release exists. Returns the new
+// version string, or null if we're already up to date. Called on launch from
+// the frontend via `window.__TAURI__.core.invoke('check_update')`.
+#[tauri::command]
+async fn check_update(app: AppHandle) -> Result<Option<String>, String> {
+    let update = app
+        .updater()
+        .map_err(|e| e.to_string())?
+        .check()
+        .await
+        .map_err(|e| e.to_string())?;
+    Ok(update.map(|u| u.version))
+}
+
+// Download and install the pending update, then relaunch into it. Invoked when
+// the user clicks the update banner.
+#[tauri::command]
+async fn install_update(app: AppHandle) -> Result<(), String> {
+    if let Some(update) = app
+        .updater()
+        .map_err(|e| e.to_string())?
+        .check()
+        .await
+        .map_err(|e| e.to_string())?
+    {
+        update
+            .download_and_install(|_chunk, _total| {}, || {})
+            .await
+            .map_err(|e| e.to_string())?;
+        app.restart();
+    }
+    Ok(())
+}
+
 fn main() {
     // CommandOrControl+Shift+D, matching the old Electron global shortcut:
     // Cmd on macOS, Ctrl elsewhere.
@@ -69,6 +104,7 @@ fn main() {
         // main.js via window-bounds.json).
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(
             tauri_plugin_global_shortcut::Builder::new()
                 .with_handler(move |app, shortcut, event| {
@@ -78,7 +114,7 @@ fn main() {
                 })
                 .build(),
         )
-        .invoke_handler(tauri::generate_handler![notify])
+        .invoke_handler(tauri::generate_handler![notify, check_update, install_update])
         .setup(move |app| {
             // A menu-bar / tray widget, not a Dock app: keep it out of the
             // macOS Dock so it behaves like the Electron tray build did.
