@@ -97,8 +97,17 @@ html.unfocused .note:focus-within {
 /* Desktop overlay mode (Tauri): the window itself is the note (no browser
    chrome, no desk backdrop). Dragging is handled in JS via the OS window,
    so no -webkit-app-region hints are needed here. */
+
+/* Frameless window: never show page scrollbars. The window is auto-sized to
+   the note's content in app.js, so nothing gets clipped. */
+html.desktop-mode,
+html.desktop-mode body {
+  overflow: hidden;
+}
+
 html.desktop-mode body {
   background: transparent;
+  padding: 16px 12px; /* room for the tape above the note and a little shadow */
 }
 
 html.desktop-mode .desk {
@@ -110,6 +119,7 @@ html.desktop-mode .note {
   position: relative;
   margin: 0;
   width: auto;
+  transform: none; /* no tilt inside the window - it would overflow sideways */
 }
 
 html.desktop-mode .note-header {

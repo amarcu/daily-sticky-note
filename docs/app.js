@@ -613,6 +613,20 @@ if (isDesktop) {
     if (e.button !== 0 || e.target.closest('.header-actions')) return;
     appWindow.startDragging();
   });
+
+  // Keep the window exactly as tall as the note's content (which grows and
+  // shrinks as tasks, the sync panel, or the level bar change), so there are
+  // never page scrollbars and never empty transparent space below the note.
+  const { LogicalSize } = window.__TAURI__.window;
+  const WINDOW_WIDTH = 320;
+  let lastHeight = 0;
+  const fitWindow = () => {
+    const h = Math.ceil(document.documentElement.scrollHeight);
+    if (!h || h === lastHeight) return;
+    lastHeight = h;
+    appWindow.setSize(new LogicalSize(WINDOW_WIDTH, h)).catch((e) => console.error('resize failed', e));
+  };
+  new ResizeObserver(fitWindow).observe(document.body);
 } else {
   function clampPosition(pos) {
     const maxLeft = Math.max(0, window.innerWidth - note.offsetWidth - 8);

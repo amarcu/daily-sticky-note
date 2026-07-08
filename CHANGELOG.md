@@ -3,6 +3,19 @@
 All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.3.1]
+
+### Fixed
+
+- Desktop window: no more stray scrollbars on the right/bottom. The note's
+  content had grown taller than the fixed window (and its slight tilt
+  pushed it sideways), so the webview showed page scrollbars. The window
+  now auto-sizes to hug the note, page scrollbars are hidden, and the tilt
+  is dropped in the frameless window.
+- macOS one-liner installer: fixed a mount-parsing bug (`hdiutil -quiet`
+  hid the mount path, and the volume name has spaces) that made
+  `install.sh` fail right after "Mounting…".
+
 ## [1.3.0]
 
 ### Added
