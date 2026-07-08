@@ -1,0 +1,13 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /lists/{syncCode} {
+      // Anyone signed in anonymously can read/write a list, but only if
+      // they know its syncCode - and syncCodes are random UUIDs (36
+      // characters), so this is "unguessable ID" security, not a real
+      // access-control system. Good enough for a personal task list;
+      // don't put anything sensitive in here.
+      allow read, write: if request.auth != null && syncCode.size() >= 20;
+    }
+  }
+}

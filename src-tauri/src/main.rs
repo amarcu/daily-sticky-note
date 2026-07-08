@@ -1,0 +1,157 @@
+// Prevents a spare console window from opening alongside the app on Windows.
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
+use std::sync::atomic::{AtomicBool, Ordering};
+
+use tauri::{
+    menu::{CheckMenuItem, CheckMenuItemBuilder, MenuBuilder, MenuItem, MenuItemBuilder},
+    tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
+    AppHandle, Manager, WindowEvent, Wry,
+};
+use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
+use tauri_plugin_notification::NotificationExt;
+
+const MAIN_WINDOW: &str = "main";
+
+/// Handles kept around so tray, shortcut, and menu handlers can all update the
+/// same UI state (this replaces the module-level `let mainWindow`/`alwaysOnTop`
+/// that the old Electron `main.js` leaned on).
+struct TrayState {
+    show_hide: MenuItem<Wry>,
+    always_on_top_item: CheckMenuItem<Wry>,
+    always_on_top: AtomicBool,
+}
+
+/// Show the note if it's hidden, hide it if it's showing - and keep the tray
+/// menu label in sync, the same "Show note"/"Hide note" flip Electron did.
+fn toggle_window(app: &AppHandle) {
+    let Some(window) = app.get_webview_window(MAIN_WINDOW) else {
+        return;
+    };
+    let was_visible = window.is_visible().unwrap_or(false);
+    if was_visible {
+        let _ = window.hide();
+    } else {
+        let _ = window.show();
+        let _ = window.set_focus();
+    }
+    if let Some(state) = app.try_state::<TrayState>() {
+        let _ = state
+            .show_hide
+            .set_text(if was_visible { "Show note" } else { "Hide note" });
+    }
+}
+
+/// Fire an OS notification. Called from the frontend via
+/// `window.__TAURI__.core.invoke('notify', { title, body })`.
+#[tauri::command]
+fn notify(app: AppHandle, title: String, body: String) {
+    let _ = app
+        .notification()
+        .builder()
+        .title(title)
+        .body(body)
+        .show();
+}
+
+fn main() {
+    // CommandOrControl+Shift+D, matching the old Electron global shortcut:
+    // Cmd on macOS, Ctrl elsewhere.
+    #[cfg(target_os = "macos")]
+    let cmd_or_ctrl = Modifiers::SUPER;
+    #[cfg(not(target_os = "macos"))]
+    let cmd_or_ctrl = Modifiers::CONTROL;
+    let toggle_shortcut = Shortcut::new(Some(cmd_or_ctrl | Modifiers::SHIFT), Code::KeyD);
+    let handler_shortcut = toggle_shortcut;
+
+    tauri::Builder::default()
+        // Remembers window position/size between launches (was hand-rolled in
+        // main.js via window-bounds.json).
+        .plugin(tauri_plugin_window_state::Builder::default().build())
+        .plugin(tauri_plugin_notification::init())
+        .plugin(
+            tauri_plugin_global_shortcut::Builder::new()
+                .with_handler(move |app, shortcut, event| {
+                    if event.state() == ShortcutState::Pressed && shortcut == &handler_shortcut {
+                        toggle_window(app);
+                    }
+                })
+                .build(),
+        )
+        .invoke_handler(tauri::generate_handler![notify])
+        .setup(move |app| {
+            // A menu-bar / tray widget, not a Dock app: keep it out of the
+            // macOS Dock so it behaves like the Electron tray build did.
+            #[cfg(target_os = "macos")]
+            app.set_activation_policy(tauri::ActivationPolicy::Accessory);
+
+            app.global_shortcut().register(toggle_shortcut)?;
+
+            let show_hide = MenuItemBuilder::with_id("show_hide", "Hide note").build(app)?;
+            let always_on_top_item =
+                CheckMenuItemBuilder::with_id("always_on_top", "Always on top")
+                    .checked(true)
+                    .build(app)?;
+            let quit = MenuItemBuilder::with_id("quit", "Quit").build(app)?;
+            let menu = MenuBuilder::new(app)
+                .item(&show_hide)
+                .item(&always_on_top_item)
+                .separator()
+                .item(&quit)
+                .build()?;
+
+            app.manage(TrayState {
+                show_hide: show_hide.clone(),
+                always_on_top_item: always_on_top_item.clone(),
+                always_on_top: AtomicBool::new(true),
+            });
+
+            TrayIconBuilder::with_id("main")
+                .icon(app.default_window_icon().unwrap().clone())
+                .icon_as_template(true)
+                .tooltip("Daily sticky note")
+                .menu(&menu)
+                .show_menu_on_left_click(false)
+                .on_menu_event(|app, event| match event.id().as_ref() {
+                    "show_hide" => toggle_window(app),
+                    "always_on_top" => {
+                        let state = app.state::<TrayState>();
+                        let next = !state.always_on_top.load(Ordering::Relaxed);
+                        state.always_on_top.store(next, Ordering::Relaxed);
+                        let _ = state.always_on_top_item.set_checked(next);
+                        if let Some(window) = app.get_webview_window(MAIN_WINDOW) {
+                            let _ = window.set_always_on_top(next);
+                        }
+                    }
+                    "quit" => app.exit(0),
+                    _ => {}
+                })
+                .on_tray_icon_event(|tray, event| {
+                    if let TrayIconEvent::Click {
+                        button: MouseButton::Left,
+                        button_state: MouseButtonState::Up,
+                        ..
+                    } = event
+                    {
+                        toggle_window(tray.app_handle());
+                    }
+                })
+                .build(app)?;
+
+            Ok(())
+        })
+        // Frameless windows have no close button, but a Cmd+W / programmatic
+        // close still fires here - hide to the tray instead of quitting, so the
+        // widget keeps running in the background like it did under Electron.
+        .on_window_event(|window, event| {
+            if let WindowEvent::CloseRequested { api, .. } = event {
+                api.prevent_close();
+                let _ = window.hide();
+                if let Some(state) = window.app_handle().try_state::<TrayState>() {
+                    let _ = state.show_hide.set_text("Show note");
+                }
+            }
+        })
+        .run(tauri::generate_context!())
+        .expect("error while running the Daily Sticky Note app");
+}

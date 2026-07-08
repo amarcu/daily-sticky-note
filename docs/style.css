@@ -1,0 +1,403 @@
+:root {
+  --paper: #fbf6ec;
+  --ink: #2c3440;
+  --ink-soft: #4a5260;
+  --accent: #3b6e71;
+  --accent-soft: #d9e6e5;
+  --due: #c4453a;
+  --due-soft: #f6e2df;
+  --muted: #8b8577;
+  --line: #e4dcc8;
+  --desk: #ede9df;
+  --dot: rgba(44, 52, 64, 0.05);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+body {
+  background-color: var(--desk);
+  background-image: radial-gradient(var(--dot) 1px, transparent 1px);
+  background-size: 18px 18px;
+  font-family: 'Inter', system-ui, sans-serif;
+  color: var(--ink);
+}
+
+.desk {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+}
+
+.note {
+  position: fixed;
+  top: 24px;
+  left: 24px;
+  width: 300px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 20px 18px 18px;
+  box-shadow: 0 10px 24px rgba(44, 52, 64, 0.12);
+  transform: rotate(-1deg);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.note.dragging {
+  box-shadow: 0 18px 30px rgba(44, 52, 64, 0.2);
+  transform: rotate(0deg);
+  transition: none;
+}
+
+.tape {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  width: 76px;
+  height: 26px;
+  background: var(--accent);
+  opacity: 0.55;
+  transform: translateX(-50%) rotate(-4deg);
+  border-radius: 2px;
+}
+
+.note-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  cursor: grab;
+  margin-bottom: 10px;
+}
+
+.note-header:active {
+  cursor: grabbing;
+}
+
+.hide-btn {
+  display: none;
+}
+
+/* Desktop overlay mode (Tauri): the window itself is the note (no browser
+   chrome, no desk backdrop). Dragging is handled in JS via the OS window,
+   so no -webkit-app-region hints are needed here. */
+html.desktop-mode body {
+  background: transparent;
+}
+
+html.desktop-mode .desk {
+  background: none;
+  min-height: 0;
+}
+
+html.desktop-mode .note {
+  position: static;
+  margin: 0;
+  width: auto;
+}
+
+html.desktop-mode .note-header {
+  cursor: grab;
+}
+
+html.desktop-mode .note-header:active {
+  cursor: grabbing;
+}
+
+html.desktop-mode .hide-btn {
+  display: flex;
+}
+
+.note-header h1 {
+  font-family: 'Caveat', cursive;
+  font-size: 34px;
+  font-weight: 700;
+  margin: 0;
+  line-height: 1;
+  color: var(--ink);
+}
+
+.date {
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.header-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.icon-btn {
+  width: 30px;
+  height: 30px;
+  border: none;
+  background: transparent;
+  color: var(--ink-soft);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.icon-btn:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.icon-btn.active {
+  background: var(--accent);
+  color: var(--paper);
+}
+
+.sync-panel {
+  background: var(--accent-soft);
+  border-radius: 6px;
+  padding: 12px 12px 10px;
+  margin-bottom: 14px;
+}
+
+.field-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-soft);
+  margin: 8px 0 4px;
+}
+
+.field-label:first-child {
+  margin-top: 0;
+}
+
+.sync-row {
+  display: flex;
+  gap: 6px;
+}
+
+.sync-row code {
+  flex: 1;
+  min-width: 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 6px 8px;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.sync-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.hint {
+  font-size: 12px;
+  color: var(--ink-soft);
+  margin: 6px 0 0;
+  line-height: 1.4;
+}
+
+.sync-status {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 8px 0 0;
+}
+
+.config-error {
+  font-size: 12px;
+  color: var(--due);
+  margin: 0 0 6px;
+}
+
+#localOnlyView .hint:first-child {
+  margin-top: 0;
+}
+
+#cloudView #disconnectCloudBtn {
+  margin-top: 10px;
+  width: 100%;
+}
+
+input[type="text"],
+input[type="time"],
+textarea {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 13px;
+  padding: 7px 8px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+textarea {
+  width: 100%;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  resize: vertical;
+  margin-bottom: 6px;
+}
+
+input[type="text"]:focus-visible,
+input[type="time"]:focus-visible,
+textarea:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.add-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.add-row input[type="text"] {
+  flex: 1;
+  min-width: 0;
+}
+
+.add-row input[type="time"] {
+  width: 108px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+}
+
+.add-btn, .text-btn {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+.add-btn {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 14px;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--paper);
+}
+
+.add-btn:hover {
+  background: #305a5d;
+}
+
+.text-btn {
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.text-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.task-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.task-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 8px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.task-row.due {
+  border-color: var(--due);
+  background: var(--due-soft);
+}
+
+.task-row input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  accent-color: var(--accent);
+}
+
+.task-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  overflow-wrap: break-word;
+}
+
+.task-row.done .task-text {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+
+.task-time {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--ink-soft);
+  flex-shrink: 0;
+}
+
+.task-row.due .task-time {
+  color: var(--due);
+}
+
+.delete-btn {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.delete-btn:hover {
+  background: var(--due-soft);
+  color: var(--due);
+}
+
+.empty-msg {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 4px 0 0;
+  text-align: center;
+}
+
+@media (max-width: 520px) {
+  .note {
+    position: static;
+    width: auto;
+    margin: 16px;
+    transform: none;
+  }
+
+  .note-header {
+    cursor: default;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .note {
+    transition: none;
+  }
+}
