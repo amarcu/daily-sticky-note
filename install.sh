@@ -39,7 +39,11 @@ case "$os" in
     curl -fsSL "$url" -o "$tmp/app.dmg"
 
     echo "Mounting..."
-    mnt="$(hdiutil attach -nobrowse -quiet "$tmp/app.dmg" | grep -o '/Volumes/[^ ]*' | tail -n1)"
+    # Note: no -quiet here - we parse hdiutil's output for the mount point, and
+    # -quiet suppresses it. The volume name has spaces ("Daily Sticky Note"), so
+    # match through to end of line rather than stopping at the first space.
+    mnt="$(hdiutil attach -nobrowse -readonly "$tmp/app.dmg" | grep -o '/Volumes/.*' | tail -n1 | sed 's/[[:space:]]*$//')"
+    [ -n "$mnt" ] || { echo "Could not mount the dmg." >&2; exit 1; }
     app="$(find "$mnt" -maxdepth 1 -name '*.app' | head -n1)"
     [ -n "$app" ] || { hdiutil detach "$mnt" -quiet || true; echo "No .app inside the dmg." >&2; exit 1; }
 
