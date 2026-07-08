@@ -107,7 +107,7 @@ html.desktop-mode .desk {
 }
 
 html.desktop-mode .note {
-  position: static;
+  position: relative;
   margin: 0;
   width: auto;
 }
@@ -407,6 +407,113 @@ button:focus-visible {
 
 .daily-quote:empty {
   display: none;
+}
+
+/* Language picker (top of the sync/settings panel) */
+.lang-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.lang-row .field-label {
+  margin: 0;
+}
+
+.lang-select {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 12px;
+  padding: 5px 6px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+/* Points & level bar */
+.score-bar {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--line);
+}
+
+.score-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.level-name {
+  font-family: 'Caveat', cursive;
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1;
+}
+
+.points {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--ink-soft);
+  flex-shrink: 0;
+}
+
+.progress {
+  height: 6px;
+  margin: 6px 0 4px;
+  background: var(--accent-soft);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  width: 0;
+  background: var(--accent);
+  border-radius: 999px;
+  transition: width 0.35s ease;
+}
+
+.to-next {
+  font-size: 11px;
+  color: var(--muted);
+  text-align: right;
+}
+
+/* Level-up toast */
+.toast {
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  transform: translate(-50%, 12px);
+  max-width: 88%;
+  padding: 8px 14px;
+  background: var(--accent);
+  color: var(--paper);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  box-shadow: 0 6px 16px rgba(44, 52, 64, 0.25);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  z-index: 5;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progress-fill,
+  .toast {
+    transition: none;
+  }
 }
 
 @media (max-width: 520px) {

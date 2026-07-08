@@ -13,8 +13,16 @@ app - nothing to configure in the source code either way.
 - Draggable sticky note with a task list (text + optional time).
 - Notifications when a timed task comes due (tap the bell icon to turn
   these on).
+- **Points and levels** - completing tasks earns points and levels you up
+  through a set of tongue-in-cheek ranks, with a progress bar and a
+  level-up nudge. Points sync across devices when cloud sync is on.
+- **A daily note** - a small positive / keep-learning line at the bottom,
+  a new one each day, from a bundled pool that quietly tops itself up in
+  the background (and works fine offline).
+- **Multiple languages** - English, Spanish, French, and German;
+  auto-detected, switchable from the sync panel.
 - **Local by default** - tasks are stored on-device, no account, no
-  network calls, nothing to set up.
+  network calls required, nothing to set up.
 - **Optional cloud sync** - connect your own Firebase project via the
   link icon to sync across devices in real time, paired with a "sync
   code" you copy from one device and paste into another. Turn it off
@@ -25,9 +33,10 @@ app - nothing to configure in the source code either way.
 
 - **Web**: open `docs/index.html` in a browser, or deploy it as a static
   site (e.g. GitHub Pages - see below). Works immediately, local-only.
-- **Desktop**: `npm install && npm run dev` (needs the Rust toolchain -
-  see [Desktop app](#desktop-app-always-on-top-overlay)). Same UI,
-  packaged as an always-on-top native overlay.
+- **Desktop**: `make dev` - or on macOS just double-click `run.command`.
+  Either one installs the Tauri CLI on first run and launches the app
+  (needs the Rust toolchain; see
+  [Desktop app](#desktop-app-always-on-top-overlay)).
 
 Either way, cloud sync is opt-in and configured at runtime - see
 [Connect cloud sync](#connect-cloud-sync-optional).
@@ -105,9 +114,22 @@ Node.js is only used to run the Tauri CLI.
 
 ### Run it locally
 
+The easiest way:
+
 ```bash
-npm install       # fetches the Tauri CLI
-npm run dev        # builds the Rust shell and launches the app
+make dev            # installs the Tauri CLI if needed, then launches the app
+```
+
+On macOS you can skip the terminal entirely and **double-click
+`run.command`** in Finder - it does the same install-if-needed-then-run.
+
+`make` also gives you `make build` (desktop installer) and `make web`
+(serve the browser version at http://localhost:4599). The underlying npm
+commands still work directly if you prefer them:
+
+```bash
+npm install        # fetches the Tauri CLI
+npm run dev         # builds the Rust shell and launches the app
 ```
 
 ### What's different from the browser version
