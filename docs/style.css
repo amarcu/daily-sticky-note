@@ -46,13 +46,24 @@ body {
   padding: 20px 18px 18px;
   box-shadow: 0 10px 24px rgba(44, 52, 64, 0.12);
   transform: rotate(-1deg);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.2s ease;
 }
 
 .note.dragging {
   box-shadow: 0 18px 30px rgba(44, 52, 64, 0.2);
   transform: rotate(0deg);
   transition: none;
+}
+
+/* Sit back a little while the app isn't focused; snap to full opacity as soon
+   as it's focused or the pointer is over it. */
+html.unfocused .note {
+  opacity: 0.78;
+}
+
+html.unfocused .note:hover,
+html.unfocused .note:focus-within {
+  opacity: 1;
 }
 
 .tape {
@@ -381,6 +392,21 @@ button:focus-visible {
   color: var(--muted);
   margin: 4px 0 0;
   text-align: center;
+}
+
+.daily-quote {
+  font-family: 'Caveat', cursive;
+  font-size: 18px;
+  line-height: 1.25;
+  color: var(--accent);
+  text-align: center;
+  margin: 14px 6px 2px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--line);
+}
+
+.daily-quote:empty {
+  display: none;
 }
 
 @media (max-width: 520px) {

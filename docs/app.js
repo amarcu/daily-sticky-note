@@ -2,6 +2,7 @@ const FIREBASE_CONFIG_KEY = 'stickyPlanner.firebaseConfig';
 const LOCAL_TASKS_KEY = 'stickyPlanner.localTasks';
 const SYNC_KEY = 'stickyPlanner.syncCode';
 const POS_KEY = 'stickyPlanner.position';
+const NOTIF_KEY = 'stickyPlanner.notifEnabled';
 const FIREBASE_SDK_VERSION = '12.15.0';
 
 const dateLabel = document.getElementById('dateLabel');
@@ -29,6 +30,7 @@ const timeInput = document.getElementById('timeInput');
 const addBtn = document.getElementById('addBtn');
 const taskList = document.getElementById('taskList');
 const emptyMsg = document.getElementById('emptyMsg');
+const dailyQuote = document.getElementById('dailyQuote');
 
 // Desktop build detection. The Tauri shell exposes a global `window.__TAURI__`
 // object (we opt into this with `withGlobalTauri` in tauri.conf.json); the plain
@@ -58,6 +60,19 @@ function fireNotification(title, body) {
   }
 }
 
+// Keeps the bell's look, tooltip, and saved state in sync with `notifEnabled`
+// so it reads clearly as an on/off toggle.
+function updateNotifButton() {
+  notifBtn.classList.toggle('active', notifEnabled);
+  const label = notifEnabled
+    ? 'Reminders on - click to turn off'
+    : 'Turn on reminders for tasks that have a time';
+  notifBtn.title = label;
+  notifBtn.setAttribute('aria-label', label);
+  notifBtn.setAttribute('aria-pressed', String(notifEnabled));
+  localStorage.setItem(NOTIF_KEY, notifEnabled ? '1' : '0');
+}
+
 let tasks = [];
 let notifEnabled = false;
 let applyingRemoteUpdate = false;
@@ -74,6 +89,32 @@ dateLabel.textContent = new Date().toLocaleDateString(undefined, {
   month: 'long',
   day: 'numeric',
 });
+
+// ---- Daily note: one gentle positive / keep-learning nudge, the same one all
+// day so it feels like "today's note", rotating to a new one tomorrow. ----
+const DAILY_NOTES = [
+  'Learn something new every day.',
+  'Small steps still move you forward.',
+  'Progress, not perfection.',
+  'You can do hard things.',
+  'One task at a time is plenty.',
+  'Stay curious - it compounds.',
+  'Done is better than perfect.',
+  'Be kind to yourself today.',
+  'Every expert was once a beginner.',
+  'A little effort today pays off tomorrow.',
+  'Finish one thing before starting the next.',
+  'Today is a good day to learn.',
+];
+
+function dayOfYear(d) {
+  const start = new Date(d.getFullYear(), 0, 0);
+  return Math.floor((d - start) / 86400000);
+}
+
+if (dailyQuote) {
+  dailyQuote.textContent = DAILY_NOTES[dayOfYear(new Date()) % DAILY_NOTES.length];
+}
 
 // ---- Local-only storage (used whenever cloud sync isn't configured) ----
 
@@ -360,13 +401,20 @@ taskInput.addEventListener('keydown', (e) => {
 });
 
 notifBtn.addEventListener('click', async () => {
+  // Already on -> turn it back off. This is the path that was missing before:
+  // the bell could only ever switch on.
+  if (notifEnabled) {
+    notifEnabled = false;
+    updateNotifButton();
+    return;
+  }
   const granted = await requestNotifPermission();
   if (granted === null) {
     alert('This browser does not support notifications.');
     return;
   }
-  notifEnabled = granted;
-  notifBtn.classList.toggle('active', notifEnabled);
+  notifEnabled = granted; // stays off if the browser/OS denied permission
+  updateNotifButton();
 });
 
 setInterval(render, 15000);
@@ -444,7 +492,34 @@ if (isDesktop) {
   dragHandle.addEventListener('pointercancel', endDrag);
 }
 
+// ---- Fade the note back a little while the app isn't focused, so it sits
+// quietly over whatever you're working on and snaps to full opacity the moment
+// you focus or hover it. ----
+
+function setFocused(focused) {
+  document.documentElement.classList.toggle('unfocused', !focused);
+}
+
+if (isDesktop) {
+  window.__TAURI__.window
+    .getCurrentWindow()
+    .onFocusChanged(({ payload: focused }) => setFocused(focused))
+    .catch((e) => console.error('Could not watch window focus', e));
+} else {
+  window.addEventListener('focus', () => setFocused(true));
+  window.addEventListener('blur', () => setFocused(false));
+}
+
 // ---- Startup: cloud mode if a Firebase config is saved, otherwise local-only ----
+
+// Restore the reminders toggle (saved per device). In the browser, drop it if
+// the notification permission was revoked since last time so the bell doesn't
+// claim to be on when it can't actually fire.
+notifEnabled = localStorage.getItem(NOTIF_KEY) === '1';
+if (notifEnabled && !isDesktop && 'Notification' in window && Notification.permission !== 'granted') {
+  notifEnabled = false;
+}
+updateNotifButton();
 
 const savedFirebaseConfig = loadFirebaseConfig();
 if (savedFirebaseConfig) {

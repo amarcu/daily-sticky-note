@@ -3,6 +3,24 @@
 All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.2.0]
+
+### Added
+
+- A daily note at the bottom of the sticky - one small positive /
+  keep-learning nudge (including "Learn something new every day"), the
+  same one all day and rotating to a new one each day.
+- The note now eases back to ~78% opacity while the app isn't focused and
+  snaps to full opacity when you focus or hover it, so it sits quietly
+  over whatever you're working on.
+
+### Fixed
+
+- The reminders bell is a real on/off toggle again. It could previously
+  only be switched on - stuck on in the desktop build - so clicking it
+  now turns reminders back off. Its tooltip and pressed state show whether
+  reminders are on, and the choice is remembered per device.
+
 ## [1.1.0]
 
 ### Changed
