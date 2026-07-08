@@ -23,6 +23,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Easier launch**: a `Makefile` (`make dev` / `make build` / `make web`,
   which install dependencies as needed) and a double-click `run.command`
   launcher for macOS.
+- **Prebuilt installers for macOS, Windows, and Linux**, built and
+  published to GitHub Releases by a Tauri release workflow on each `v*`
+  tag, plus one-liner installers (`install.sh` for macOS/Linux,
+  `install.ps1` for Windows) that fetch the right asset from the latest
+  release.
 
 ## [1.2.0]
 

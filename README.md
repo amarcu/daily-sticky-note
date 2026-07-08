@@ -33,13 +33,41 @@ app - nothing to configure in the source code either way.
 
 - **Web**: open `docs/index.html` in a browser, or deploy it as a static
   site (e.g. GitHub Pages - see below). Works immediately, local-only.
-- **Desktop**: `make dev` - or on macOS just double-click `run.command`.
-  Either one installs the Tauri CLI on first run and launches the app
-  (needs the Rust toolchain; see
-  [Desktop app](#desktop-app-always-on-top-overlay)).
+- **Desktop**: install a prebuilt build (below), or build from source with
+  `make dev` (see [Desktop app](#desktop-app-always-on-top-overlay)).
 
 Either way, cloud sync is opt-in and configured at runtime - see
 [Connect cloud sync](#connect-cloud-sync-optional).
+
+## Install the desktop app
+
+Prebuilt installers for **macOS, Windows, and Linux** are on the
+[Releases page](https://github.com/amarcu/daily-sticky-note/releases) -
+download the one for your platform and run it. No toolchain needed.
+
+Prefer a one-liner? These fetch and install the latest release for you:
+
+**macOS / Linux**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/amarcu/daily-sticky-note/main/install.sh | bash
+```
+
+**Windows** (PowerShell)
+
+```powershell
+irm https://raw.githubusercontent.com/amarcu/daily-sticky-note/main/install.ps1 | iex
+```
+
+The one-liner picks the right asset from the latest release: a `.dmg`
+copied into Applications on macOS, an `.AppImage` dropped into
+`~/.local/bin` on Linux, or the `.exe` installer launched on Windows.
+
+These builds are unsigned, so the OS warns once about an "unidentified
+developer" - expected for a personal app (right-click > Open on macOS;
+"More info > Run anyway" on Windows). Installers are published
+automatically by [`.github/workflows/release.yml`](.github/workflows/release.yml)
+whenever a `v*` tag is pushed.
 
 ## Deploy the web version (optional)
 
