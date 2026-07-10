@@ -9,7 +9,7 @@ let particles = [];
 let running = false;
 let dpr = 1;
 
-const PALETTE = ['#3b6e71', '#c4453a', '#e0b64a', '#4a8b8e', '#f0d98a', '#2c3440'];
+const PALETTE = ['#2e8b8f', '#e0453a', '#f2b632', '#4caf82', '#ff8a3d', '#7b61c9', '#e0b64a'];
 
 function prefersReducedMotion() {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -70,7 +70,7 @@ function loop() {
 }
 
 // Fire a burst at a viewport coordinate (e.g. a clicked checkbox's centre).
-export function burst(clientX, clientY, count = 16, power = 1) {
+export function burst(clientX, clientY, count = 26, power = 1.4) {
   if (prefersReducedMotion()) return;
   ensureCanvas();
   if (!canvas) return;
@@ -79,18 +79,18 @@ export function burst(clientX, clientY, count = 16, power = 1) {
   const y = clientY - r.top;
   for (let i = 0; i < count; i++) {
     const angle = Math.random() * Math.PI * 2;
-    const speed = (2 + Math.random() * 4.5) * power;
+    const speed = (3.5 + Math.random() * 6) * power;
     particles.push({
       x,
       y,
       vx: Math.cos(angle) * speed,
-      vy: Math.sin(angle) * speed - 2.4 * power,
-      size: 4 + Math.random() * 4,
+      vy: Math.sin(angle) * speed - 3.4 * power, // extra upward pop so it reads as a burst
+      size: 7 + Math.random() * 8,
       rot: Math.random() * Math.PI,
-      vr: (Math.random() - 0.5) * 0.5,
+      vr: (Math.random() - 0.5) * 0.6,
       color: PALETTE[(Math.random() * PALETTE.length) | 0],
       life: 1,
-      decay: 0.012 + Math.random() * 0.02,
+      decay: 0.006 + Math.random() * 0.01, // slower fade = stays visible longer
     });
   }
   if (!running) {

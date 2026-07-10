@@ -3,6 +3,22 @@
 All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.4.1]
+
+### Changed
+
+- Made the animations bolder and more visible: bigger, brighter, longer-lived
+  confetti (and a much larger burst on level-ups), a punchier level-up toast,
+  and a new task now pops in with a green highlight ring.
+
+### Fixed
+
+- The task list no longer flickers a scrollbar while a new task animates in.
+  The entrance used a springy overshoot that briefly pushed the row past its
+  box; it now grows with an ease-out that never exceeds its resting size, and
+  the highlight is a box-shadow (which doesn't affect layout). The task-list
+  scrollbar is also now thin and subtle.
+
 ## [1.4.0]
 
 ### Added

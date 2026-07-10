@@ -221,7 +221,7 @@ function awardTask(id) {
     showToast(`${t('levelUp')} ${names[after]}`);
     // Bigger celebratory burst from the middle of the note on a level-up.
     const nr = note.getBoundingClientRect();
-    burst(nr.left + nr.width / 2, nr.top + nr.height * 0.45, 34, 1.5);
+    burst(nr.left + nr.width / 2, nr.top + nr.height * 0.45, 52, 2.2);
   }
 }
 
@@ -543,7 +543,7 @@ function render() {
       if (cb.checked) {
         // Confetti from the checkbox itself (grab its spot before render() wipes it).
         const r = cb.getBoundingClientRect();
-        burst(r.left + r.width / 2, r.top + r.height / 2, 16, 1);
+        burst(r.left + r.width / 2, r.top + r.height / 2, 28, 1.5);
         awardTask(task.id);
       }
       render();
