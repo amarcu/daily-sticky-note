@@ -11,7 +11,7 @@
       "endpoints": [
         "https://github.com/amarcu/daily-sticky-note/releases/latest/download/latest.json"
       ],
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEFENUM2OTQzRTRFNzRBMjUKUldRbFN1ZmtRMmxjcmV1ckNaN0Q5VnZSNWt3U3hCWVZJcGp2a2h6cWdJeElxcDR0WVdLNUI2d0YK"
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDVGMzNFMTAwOEFCOTU0NTYKUldSV1ZMbUtBT0V6WDNWcExmYjlJOFlhSEsrQkZMS2NNdjdFVTZZSmQwNlFtMGgxWW9FdzFsRkoK"
     }
   },
   "app": {
