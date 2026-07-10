@@ -3,6 +3,22 @@
 All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.4.0]
+
+### Added
+
+- **Animation & "juice"**: a confetti burst when you complete a task (a
+  bigger one on a level-up), new tasks spring into the list, the level-up
+  toast bounces in, overdue tasks gently throb, and on the desktop the
+  note lifts while you drag it and springs back when you drop it. Bursts
+  are one-shot (no idle battery drain) and everything respects
+  `prefers-reduced-motion`.
+
+### Fixed
+
+- The update banner no longer flashed as an empty bar when no update was
+  pending (an author `display` rule was overriding the `hidden` attribute).
+
 ## [1.3.2]
 
 ### Added

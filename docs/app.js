@@ -1,5 +1,6 @@
 import { QUOTES } from './quotes.js';
 import { LANGS, LANG_NAMES, TRANSLATIONS, LEVEL_THRESHOLDS, LEVEL_NAMES } from './i18n.js';
+import { burst } from './fx.js';
 
 const FIREBASE_CONFIG_KEY = 'stickyPlanner.firebaseConfig';
 const LOCAL_TASKS_KEY = 'stickyPlanner.localTasks';
@@ -66,6 +67,7 @@ if (isDesktop) document.documentElement.classList.add('desktop-mode');
 let tasks = [];
 let points = 0;
 let awardedIds = new Set();
+let justAddedId = null; // task id to play the "spring in" animation for, once
 let notifEnabled = false;
 let applyingRemoteUpdate = false;
 let saveTimer = null;
@@ -217,6 +219,9 @@ function awardTask(id) {
   if (after > before) {
     const names = LEVEL_NAMES[lang] || LEVEL_NAMES.en;
     showToast(`${t('levelUp')} ${names[after]}`);
+    // Bigger celebratory burst from the middle of the note on a level-up.
+    const nr = note.getBoundingClientRect();
+    burst(nr.left + nr.width / 2, nr.top + nr.height * 0.45, 34, 1.5);
   }
 }
 
@@ -522,6 +527,12 @@ function render() {
 
     const row = document.createElement('div');
     row.className = 'task-row' + (isDue ? ' due' : '') + (task.done ? ' done' : '');
+    // Spring the freshly-added row in, once (render() rebuilds every row, so
+    // gate it on the id to avoid replaying on every re-render).
+    if (task.id === justAddedId) {
+      row.classList.add('row-enter');
+      justAddedId = null;
+    }
 
     const cb = document.createElement('input');
     cb.type = 'checkbox';
@@ -529,7 +540,12 @@ function render() {
     cb.setAttribute('aria-label', `${task.text}`);
     cb.addEventListener('change', () => {
       task.done = cb.checked;
-      if (cb.checked) awardTask(task.id);
+      if (cb.checked) {
+        // Confetti from the checkbox itself (grab its spot before render() wipes it).
+        const r = cb.getBoundingClientRect();
+        burst(r.left + r.width / 2, r.top + r.height / 2, 16, 1);
+        awardTask(task.id);
+      }
       render();
       scheduleSave();
     });
@@ -567,17 +583,19 @@ function render() {
 addBtn.addEventListener('click', () => {
   const text = taskInput.value.trim();
   if (!text) return;
-  tasks.push({
-    id: crypto.randomUUID(),
-    text,
-    time: timeInput.value,
-    done: false,
-  });
+  const id = crypto.randomUUID();
+  tasks.push({ id, text, time: timeInput.value, done: false });
+  justAddedId = id;
   taskInput.value = '';
   timeInput.value = '';
   render();
   scheduleSave();
   taskInput.focus();
+  // Quick press-pop on the button for a bit of feedback.
+  addBtn.animate(
+    [{ transform: 'scale(0.96)' }, { transform: 'scale(1)' }],
+    { duration: 180, easing: 'ease-out' }
+  );
 });
 
 taskInput.addEventListener('keydown', (e) => {
@@ -612,10 +630,23 @@ if (isDesktop) {
   hideBtn.addEventListener('click', () => appWindow.hide());
   // Drag the whole window by its header, but not when the press lands on one
   // of the action buttons - the OS moves the real window here, not a div.
+  // While dragging, the note "lifts" (scale + deeper shadow) and springs back
+  // to rest when you let go, like picking a real sticky off the desk.
+  let liftSafety = null;
+  const settle = () => {
+    clearTimeout(liftSafety);
+    note.classList.remove('lifting');
+  };
   dragHandle.addEventListener('pointerdown', (e) => {
     if (e.button !== 0 || e.target.closest('.header-actions')) return;
+    note.classList.add('lifting');
+    // Native drag may not deliver pointerup to us, so guarantee a settle.
+    clearTimeout(liftSafety);
+    liftSafety = setTimeout(settle, 4000);
     appWindow.startDragging();
   });
+  window.addEventListener('pointerup', settle);
+  window.addEventListener('pointercancel', settle);
 
   // Keep the window exactly as tall as the note's content (which grows and
   // shrinks as tasks, the sync panel, or the level bar change), so there are
