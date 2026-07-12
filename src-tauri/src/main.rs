@@ -8,6 +8,7 @@ use tauri::{
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
     AppHandle, Manager, WindowEvent, Wry,
 };
+use tauri_plugin_autostart::{MacosLauncher, ManagerExt as AutostartManagerExt};
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
 use tauri_plugin_notification::NotificationExt;
 use tauri_plugin_updater::UpdaterExt;
@@ -21,6 +22,7 @@ struct TrayState {
     show_hide: MenuItem<Wry>,
     always_on_top_item: CheckMenuItem<Wry>,
     always_on_top: AtomicBool,
+    open_at_login_item: CheckMenuItem<Wry>,
 }
 
 /// Show the note if it's hidden, hide it if it's showing - and keep the tray
@@ -105,6 +107,10 @@ fn main() {
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_autostart::init(
+            MacosLauncher::LaunchAgent,
+            None,
+        ))
         .plugin(
             tauri_plugin_global_shortcut::Builder::new()
                 .with_handler(move |app, shortcut, event| {
@@ -123,15 +129,34 @@ fn main() {
 
             app.global_shortcut().register(toggle_shortcut)?;
 
+            // Start at login by default, but only enable it once (the first
+            // launch ever) - after that, respect whatever the user set via the
+            // tray toggle, tracked by a marker file in the app config dir.
+            let autostart = app.autolaunch();
+            if let Ok(config_dir) = app.path().app_config_dir() {
+                let marker = config_dir.join(".autostart-initialized");
+                if !marker.exists() {
+                    let _ = std::fs::create_dir_all(&config_dir);
+                    let _ = autostart.enable();
+                    let _ = std::fs::write(&marker, b"1");
+                }
+            }
+            let login_enabled = autostart.is_enabled().unwrap_or(false);
+
             let show_hide = MenuItemBuilder::with_id("show_hide", "Hide note").build(app)?;
             let always_on_top_item =
                 CheckMenuItemBuilder::with_id("always_on_top", "Always on top")
                     .checked(true)
                     .build(app)?;
+            let open_at_login_item =
+                CheckMenuItemBuilder::with_id("open_at_login", "Open at login")
+                    .checked(login_enabled)
+                    .build(app)?;
             let quit = MenuItemBuilder::with_id("quit", "Quit").build(app)?;
             let menu = MenuBuilder::new(app)
                 .item(&show_hide)
                 .item(&always_on_top_item)
+                .item(&open_at_login_item)
                 .separator()
                 .item(&quit)
                 .build()?;
@@ -140,6 +165,7 @@ fn main() {
                 show_hide: show_hide.clone(),
                 always_on_top_item: always_on_top_item.clone(),
                 always_on_top: AtomicBool::new(true),
+                open_at_login_item: open_at_login_item.clone(),
             });
 
             TrayIconBuilder::with_id("main")
@@ -158,6 +184,17 @@ fn main() {
                         if let Some(window) = app.get_webview_window(MAIN_WINDOW) {
                             let _ = window.set_always_on_top(next);
                         }
+                    }
+                    "open_at_login" => {
+                        let autostart = app.autolaunch();
+                        let enabled = autostart.is_enabled().unwrap_or(false);
+                        let _ = if enabled {
+                            autostart.disable()
+                        } else {
+                            autostart.enable()
+                        };
+                        let now = autostart.is_enabled().unwrap_or(false);
+                        let _ = app.state::<TrayState>().open_at_login_item.set_checked(now);
                     }
                     "quit" => app.exit(0),
                     _ => {}

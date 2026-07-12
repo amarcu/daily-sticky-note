@@ -3,6 +3,18 @@
 All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.4.2]
+
+### Added
+
+- **Start at login** (desktop): the app now opens automatically when you log
+  in. It's on by default and can be toggled from the tray menu ("Open at
+  login").
+- **Compact / expand**: a chevron button in the header collapses the note to a
+  slim bar (showing a "N left" task count) and expands it again, with a smooth
+  animation. On the desktop the window shrinks and grows to match. The state is
+  remembered.
+
 ## [1.4.1]
 
 ### Changed

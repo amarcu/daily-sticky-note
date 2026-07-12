@@ -93,12 +93,59 @@ html.unfocused .note:focus-within {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
+  gap: 8px;
   cursor: grab;
   margin-bottom: 10px;
 }
 
 .note-header:active {
   cursor: grabbing;
+}
+
+/* ---- Compact / expand ---------------------------------------------------- */
+
+/* The whole note body collapses to a slim header bar. app.js animates
+   max-height between the content height and 0 (reliable in every webview);
+   on desktop the window auto-sizes to content, so it visibly shrinks along. */
+.note-body {
+  overflow: hidden;
+  transition: max-height 0.36s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.24s ease;
+}
+
+.note.compact .note-body {
+  opacity: 0;
+}
+
+.note.compact .note-header {
+  margin-bottom: 0;
+}
+
+/* Collapse chevron flips when compact. */
+.chevron {
+  transition: transform 0.3s ease;
+}
+
+.note.compact #collapseBtn .chevron {
+  transform: rotate(180deg);
+}
+
+/* Remaining-task count, only shown while compact. */
+.compact-count {
+  display: none;
+  align-self: center;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-soft);
+  padding: 2px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.note.compact .compact-count {
+  display: inline-block;
 }
 
 .hide-btn {

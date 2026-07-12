@@ -8,6 +8,7 @@ const SYNC_KEY = 'stickyPlanner.syncCode';
 const POS_KEY = 'stickyPlanner.position';
 const NOTIF_KEY = 'stickyPlanner.notifEnabled';
 const LANG_KEY = 'stickyPlanner.lang';
+const COMPACT_KEY = 'stickyPlanner.compact';
 const POINTS_KEY = 'stickyPlanner.points';
 const AWARDED_KEY = 'stickyPlanner.awarded';
 const QUOTE_CACHE_KEY = 'stickyPlanner.quoteCache';
@@ -57,6 +58,8 @@ const toast = document.getElementById('toast');
 const updateBanner = document.getElementById('updateBanner');
 const updateText = document.getElementById('updateText');
 const updateBtn = document.getElementById('updateBtn');
+const collapseBtn = document.getElementById('collapseBtn');
+const compactCount = document.getElementById('compactCount');
 
 // Desktop build detection. The Tauri shell exposes a global `window.__TAURI__`
 // object (we opt into this with `withGlobalTauri` in tauri.conf.json); the plain
@@ -68,6 +71,7 @@ let tasks = [];
 let points = 0;
 let awardedIds = new Set();
 let justAddedId = null; // task id to play the "spring in" animation for, once
+let compact = false; // collapsed to just the header bar
 let notifEnabled = false;
 let applyingRemoteUpdate = false;
 let saveTimer = null;
@@ -116,12 +120,76 @@ function applyLanguage() {
   updateNotifButton();
   renderScore();
   pickDailyQuote();
+  applyCompact(); // re-apply the collapse label + count in the new language
 }
 
 function setLanguage(l) {
   lang = LANGS.includes(l) ? l : 'en';
   localStorage.setItem(LANG_KEY, lang);
   applyLanguage();
+}
+
+// ---- Compact / expand -------------------------------------------------------
+
+// The compact badge shows how many tasks are still open.
+function updateCompactCount() {
+  if (!compactCount) return;
+  const open = tasks.filter((task) => !task.done).length;
+  compactCount.textContent = t('tasksLeft', { n: open });
+}
+
+function setCollapseLabel() {
+  if (!collapseBtn) return;
+  const label = compact ? t('expand') : t('collapse');
+  collapseBtn.title = label;
+  collapseBtn.setAttribute('aria-label', label);
+  collapseBtn.setAttribute('aria-expanded', String(!compact));
+}
+
+// Set the collapsed/expanded state WITHOUT animating (startup, language change).
+function applyCompact() {
+  note.classList.toggle('compact', compact);
+  const body = document.getElementById('noteBody');
+  if (body) {
+    body.style.transition = 'none';
+    body.style.maxHeight = compact ? '0px' : '';
+    void body.offsetHeight; // flush, then let transitions resume
+    body.style.transition = '';
+  }
+  setCollapseLabel();
+  updateCompactCount();
+  localStorage.setItem(COMPACT_KEY, compact ? '1' : '0');
+}
+
+// Animated toggle: max-height tweens between the content height and 0, so it
+// works smoothly in every webview (the grid-rows trick doesn't animate in some).
+function toggleCompact() {
+  const body = document.getElementById('noteBody');
+  compact = !compact;
+  note.classList.toggle('compact', compact);
+  setCollapseLabel();
+  updateCompactCount();
+  localStorage.setItem(COMPACT_KEY, compact ? '1' : '0');
+  if (!body) return;
+  if (compact) {
+    body.style.maxHeight = `${body.scrollHeight}px`;
+    void body.offsetHeight;
+    body.style.maxHeight = '0px';
+  } else {
+    body.style.maxHeight = '0px';
+    void body.offsetHeight;
+    body.style.maxHeight = `${body.scrollHeight}px`;
+    const onEnd = (e) => {
+      if (e.propertyName !== 'max-height') return;
+      body.removeEventListener('transitionend', onEnd);
+      if (!compact) body.style.maxHeight = ''; // release so it can grow freely
+    };
+    body.addEventListener('transitionend', onEnd);
+  }
+}
+
+if (collapseBtn) {
+  collapseBtn.addEventListener('click', toggleCompact);
 }
 
 if (langSelect) {
@@ -513,6 +581,7 @@ function currentHHMM() {
 function render() {
   taskList.innerHTML = '';
   emptyMsg.style.display = tasks.length ? 'none' : 'block';
+  updateCompactCount();
   const nowStr = currentHHMM();
 
   const sorted = tasks.slice().sort((a, b) => (a.time || 'zz').localeCompare(b.time || 'zz'));
@@ -777,6 +846,9 @@ if (notifEnabled && !isDesktop && 'Notification' in window && Notification.permi
 // Points/awarded load locally first; cloud mode merges on top of these.
 points = Number(localStorage.getItem(POINTS_KEY)) || 0;
 awardedIds = new Set(loadLocalAwarded());
+
+// Restore the collapsed/expanded state before the first paint.
+compact = localStorage.getItem(COMPACT_KEY) === '1';
 
 applyLanguage(); // paints every translated string, the date, the bell, and the score
 
