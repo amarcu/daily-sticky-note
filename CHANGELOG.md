@@ -3,6 +3,13 @@
 All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.4.6]
+
+### Changed
+
+- Renamed the focus timer to **"Focus Mode"** in the widget and the completion
+  message.
+
 ## [1.4.5]
 
 ### Added
