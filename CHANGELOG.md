@@ -3,6 +3,16 @@
 All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.4.3]
+
+### Added
+
+- **Resizable window** (desktop): drag the window's bottom edge to make it
+  taller and see more tasks at once. The task list now fills the available
+  height and only scrolls internally when it runs out of room. Width stays
+  fixed; the size is remembered between launches. Collapsing still shrinks the
+  window to a slim header bar and expanding restores your chosen height.
+
 ## [1.4.2]
 
 ### Added

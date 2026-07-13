@@ -72,6 +72,7 @@ let points = 0;
 let awardedIds = new Set();
 let justAddedId = null; // task id to play the "spring in" animation for, once
 let compact = false; // collapsed to just the header bar
+let onCompactToggle = null; // desktop hook: resize the window to match the collapse
 let notifEnabled = false;
 let applyingRemoteUpdate = false;
 let saveTimer = null;
@@ -186,6 +187,7 @@ function toggleCompact() {
     };
     body.addEventListener('transitionend', onEnd);
   }
+  if (onCompactToggle) onCompactToggle(compact); // desktop: resize the window too
 }
 
 if (collapseBtn) {
@@ -717,19 +719,45 @@ if (isDesktop) {
   window.addEventListener('pointerup', settle);
   window.addEventListener('pointercancel', settle);
 
-  // Keep the window exactly as tall as the note's content (which grows and
-  // shrinks as tasks, the sync panel, or the level bar change), so there are
-  // never page scrollbars and never empty transparent space below the note.
+  // The window is user-resizable now (the note fills it and the task list
+  // flexes), so there's no content-hug auto-size. The one time we drive the
+  // window size ourselves is compact/expand: shrink to the header bar and back,
+  // animated to match the content collapse.
   const { LogicalSize } = window.__TAURI__.window;
   const WINDOW_WIDTH = 320;
-  let lastHeight = 0;
-  const fitWindow = () => {
-    const h = Math.ceil(document.documentElement.scrollHeight);
-    if (!h || h === lastHeight) return;
-    lastHeight = h;
-    appWindow.setSize(new LogicalSize(WINDOW_WIDTH, h)).catch((e) => console.error('resize failed', e));
+  const EXPANDED_H_KEY = 'stickyPlanner.expandedHeight';
+
+  function compactTargetHeight() {
+    const header = document.querySelector('.note-header');
+    const h = header ? header.getBoundingClientRect().height : 50;
+    return Math.round(h + 70); // header + note/body vertical paddings
+  }
+
+  let winAnimId = 0;
+  function animateWindowHeight(from, to) {
+    const id = ++winAnimId; // cancel any in-flight animation
+    const start = performance.now();
+    const dur = 340;
+    const tick = (now) => {
+      if (id !== winAnimId) return;
+      const p = Math.min(1, (now - start) / dur);
+      const eased = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+      const h = Math.round(from + (to - from) * eased);
+      appWindow.setSize(new LogicalSize(WINDOW_WIDTH, h)).catch(() => {});
+      if (p < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }
+
+  onCompactToggle = (isCompact) => {
+    if (isCompact) {
+      localStorage.setItem(EXPANDED_H_KEY, String(window.innerHeight));
+      animateWindowHeight(window.innerHeight, compactTargetHeight());
+    } else {
+      const saved = Number(localStorage.getItem(EXPANDED_H_KEY)) || 560;
+      animateWindowHeight(window.innerHeight, saved);
+    }
   };
-  new ResizeObserver(fitWindow).observe(document.body);
 
   // On launch, ask whether a newer release exists; if so, show a banner that
   // downloads, installs, and relaunches into it on one click (all handled on

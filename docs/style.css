@@ -156,8 +156,9 @@ html.unfocused .note:focus-within {
    chrome, no desk backdrop). Dragging is handled in JS via the OS window,
    so no -webkit-app-region hints are needed here. */
 
-/* Frameless window: never show page scrollbars. The window is auto-sized to
-   the note's content in app.js, so nothing gets clipped. */
+/* Frameless window: never show page scrollbars. The note fills the window and
+   lays out as a flex column, so when the window is resized taller the task list
+   absorbs the extra height (and scrolls internally when it runs out). */
 html.desktop-mode,
 html.desktop-mode body {
   overflow: hidden;
@@ -165,19 +166,49 @@ html.desktop-mode body {
 
 html.desktop-mode body {
   background: transparent;
+  height: 100vh;
+  box-sizing: border-box;
   padding: 16px 12px; /* room for the tape above the note and a little shadow */
 }
 
 html.desktop-mode .desk {
   background: none;
   min-height: 0;
+  height: 100%;
 }
 
 html.desktop-mode .note {
   position: relative;
   margin: 0;
   width: auto;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
   transform: none; /* no tilt inside the window - it would overflow sideways */
+}
+
+/* The body region grows to fill the window; the task list inside it flexes. */
+html.desktop-mode .note-body {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+html.desktop-mode .note-body-inner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+html.desktop-mode .task-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+}
+
+/* Collapsed: shrink to just the header (app.js resizes the window to match). */
+html.desktop-mode .note.compact {
+  height: auto;
 }
 
 html.desktop-mode .note-header {
