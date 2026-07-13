@@ -241,6 +241,12 @@ html.desktop-mode .hide-btn {
 .header-actions {
   display: flex;
   gap: 4px;
+  flex-shrink: 0; /* the action buttons (incl. expand) must never be pushed off */
+}
+
+/* Let the title give way before the buttons if the header ever runs out of room. */
+.note-title {
+  min-width: 0;
 }
 
 .icon-btn {
@@ -645,6 +651,12 @@ button:focus-visible {
 
 .note.compact .timer-badge:not([hidden]) {
   display: inline-block;
+}
+
+/* When a timer is running its badge shows instead of the task count, so both
+   plus the buttons never have to fit the narrow compact bar at once. */
+.note.compact.timer-on .compact-count {
+  display: none;
 }
 
 /* Update banner (desktop only, shown when a newer version is available) */

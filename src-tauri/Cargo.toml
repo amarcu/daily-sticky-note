@@ -1,6 +1,6 @@
 [package]
 name = "daily-sticky-note"
-version = "1.4.7"
+version = "1.4.8"
 description = "A tiny always-on-top sticky note task list"
 authors = ["amarcu"]
 license = "MIT"

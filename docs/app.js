@@ -209,6 +209,13 @@ if (collapseBtn) {
   collapseBtn.addEventListener('click', toggleCompact);
 }
 
+// Double-clicking the header (anywhere but the action buttons) also toggles
+// compact - a reliable fallback for expanding if the button is ever out of view.
+dragHandle.addEventListener('dblclick', (e) => {
+  if (e.target.closest('.header-actions')) return;
+  toggleCompact();
+});
+
 // ---- Focus timer -----------------------------------------------------------
 
 const ICON_PAUSE =
@@ -251,6 +258,9 @@ function updateTimerUI() {
   if (!timer) return;
   timerIdle.hidden = timerActive;
   timerRun.hidden = !timerActive;
+  // When a timer is running its badge takes the header slot, so the task count
+  // steps aside (both + the buttons won't fit the narrow compact bar).
+  note.classList.toggle('timer-on', timerActive);
   const label = fmtClock(timerRemaining());
   timerDisplay.textContent = label;
   timerBadge.textContent = label;
@@ -991,7 +1001,12 @@ if (isDesktop) {
 
   function compactTargetHeight() {
     const header = document.querySelector('.note-header');
-    const h = header ? header.getBoundingClientRect().height : 50;
+    let h = header ? header.getBoundingClientRect().height : 50;
+    // Keep the update banner (above the header) on screen when collapsed, so an
+    // update is always reachable even from the compact bar.
+    if (updateBanner && !updateBanner.hidden) {
+      h += updateBanner.getBoundingClientRect().height + 12;
+    }
     return Math.round(h + 70); // header + note/body vertical paddings
   }
 

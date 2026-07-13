@@ -3,6 +3,16 @@
 All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.4.8]
+
+### Fixed
+
+- **Couldn't expand a collapsed note when a timer was running**: the task-count
+  and timer badges plus the action buttons overflowed the narrow bar, pushing
+  the expand button off-screen. Now only one badge shows in the compact bar (the
+  timer if one's running), the action buttons are never pushed off, and
+  **double-clicking the header** collapses/expands as a fallback.
+
 ## [1.4.7]
 
 ### Changed
