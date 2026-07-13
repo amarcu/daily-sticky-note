@@ -3,6 +3,20 @@
 All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.5.0]
+
+### Added
+
+- **Focus Mode sessions are now tied to tasks.** Every open task has a small
+  play button that starts a session *on that task* (using your last-picked
+  duration); the running timer shows the task's name, the task's row is
+  highlighted while you focus on it, and the end alert names the task
+  ("Your session on 'X' is done - time to switch!").
+- **End-of-session prompt.** When a focus session finishes, the timer offers
+  the next step in one tap: **Mark done** (checks the task off and awards
+  points), **5m break** (a short break timer, with its own "Break's over"
+  nudge), or **Focus next** (starts a session on the next open task).
+
 ## [1.4.9]
 
 ### Added

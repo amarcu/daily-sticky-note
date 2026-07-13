@@ -73,6 +73,13 @@ const timerDisplay = document.getElementById('timerDisplay');
 const timerToggle = document.getElementById('timerToggle');
 const timerReset = document.getElementById('timerReset');
 const timerBadge = document.getElementById('timerBadge');
+const timerTask = document.getElementById('timerTask');
+const timerDonePanel = document.getElementById('timerDonePanel');
+const timerDoneTask = document.getElementById('timerDoneTask');
+const doneMarkBtn = document.getElementById('doneMarkBtn');
+const doneBreakBtn = document.getElementById('doneBreakBtn');
+const doneNextBtn = document.getElementById('doneNextBtn');
+const doneCloseBtn = document.getElementById('doneCloseBtn');
 const wheelH = document.getElementById('wheelH');
 const wheelM = document.getElementById('wheelM');
 const timerStart = document.getElementById('timerStart');
@@ -231,6 +238,9 @@ let timerRemainingMs = 0; // remaining when paused
 let timerActive = false; // a session exists (running or paused)
 let timerRunning = false; // actively counting down
 let timerTotalMin = 0; // for restoring the chip that was chosen
+let timerTaskId = null; // task this session is for (null = free-standing session)
+let timerKind = 'focus'; // 'focus' | 'break'
+let timerDoneInfo = null; // {taskId} while the end-of-session prompt is showing
 
 function fmtClock(ms) {
   const total = Math.max(0, Math.round(ms / 1000));
@@ -252,14 +262,26 @@ function persistTimer() {
   }
   localStorage.setItem(
     TIMER_KEY,
-    JSON.stringify({ running: timerRunning, endsAt: timerEndsAt, remainingMs: timerRemainingMs, totalMin: timerTotalMin })
+    JSON.stringify({
+      running: timerRunning,
+      endsAt: timerEndsAt,
+      remainingMs: timerRemainingMs,
+      totalMin: timerTotalMin,
+      taskId: timerTaskId,
+      kind: timerKind,
+    })
   );
+}
+
+function focusTaskById(id) {
+  return id ? tasks.find((x) => x.id === id) || null : null;
 }
 
 function updateTimerUI() {
   if (!timer) return;
-  timerIdle.hidden = timerActive;
+  timerIdle.hidden = timerActive || !!timerDoneInfo;
   timerRun.hidden = !timerActive;
+  timerDonePanel.hidden = timerActive || !timerDoneInfo;
   // When a timer is running its badge takes the header slot, so the task count
   // steps aside (both + the buttons won't fit the narrow compact bar).
   note.classList.toggle('timer-on', timerActive);
@@ -267,6 +289,11 @@ function updateTimerUI() {
   timerDisplay.textContent = label;
   timerBadge.textContent = label;
   timerBadge.hidden = !timerActive;
+  // What this session is for: the task's text, or "Break".
+  const focusTask = focusTaskById(timerTaskId);
+  const what = timerKind === 'break' ? t('breakLabel') : focusTask ? focusTask.text : '';
+  timerTask.textContent = what;
+  timerTask.hidden = !what;
   timerRun.classList.toggle('paused', timerActive && !timerRunning);
   timerToggle.innerHTML = timerRunning ? ICON_PAUSE : ICON_PLAY;
   const ttl = timerRunning ? t('timerPause') : t('timerResume');
@@ -285,16 +312,20 @@ function timerTick() {
   timerBadge.textContent = label;
 }
 
-function startTimer(minutes) {
+function startTimer(minutes, opts = {}) {
   timerTotalMin = minutes;
   timerRemainingMs = minutes * 60000;
   timerEndsAt = Date.now() + timerRemainingMs;
   timerActive = true;
   timerRunning = true;
+  timerTaskId = opts.taskId || null;
+  timerKind = opts.kind || 'focus';
+  timerDoneInfo = null;
   clearInterval(timerInterval);
   timerInterval = setInterval(timerTick, 250);
   persistTimer();
   updateTimerUI();
+  render(); // highlight the focused task's row
   // Make sure we're allowed to notify at the end (browser prompt on the web).
   requestNotifPermission();
 }
@@ -326,8 +357,12 @@ function resetTimer() {
   timerRunning = false;
   timerRemainingMs = 0;
   timerEndsAt = 0;
+  timerTaskId = null;
+  timerKind = 'focus';
+  timerDoneInfo = null;
   persistTimer();
   updateTimerUI();
+  render(); // clear the focused-row highlight
   requestAnimationFrame(applyPick); // wheels are visible again - restore the pick
 }
 
@@ -336,14 +371,30 @@ function completeTimer() {
   timerInterval = null;
   timerActive = false;
   timerRunning = false;
+  const wasBreak = timerKind === 'break';
+  const doneTask = focusTaskById(timerTaskId);
+  timerTaskId = null;
   persistTimer();
-  updateTimerUI();
-  fireNotification(t('timerDone'), t('timerDoneBody'));
+  if (wasBreak) {
+    // Break's over: back to the picker, nudge to choose the next task.
+    timerKind = 'focus';
+    fireNotification(t('breakDoneTitle'), t('breakDoneBody'));
+    updateTimerUI();
+    requestAnimationFrame(applyPick);
+  } else {
+    // Focus session over: name the task in the alert and offer the next step
+    // (mark done / take a break / focus the next task).
+    const body = doneTask ? t('timerDoneTaskBody', { task: doneTask.text }) : t('timerDoneBody');
+    fireNotification(t('timerDone'), body);
+    timerDoneInfo = { taskId: doneTask ? doneTask.id : null };
+    updateDonePanel();
+    updateTimerUI();
+  }
+  render(); // clear the focused-row highlight
   // Burst from the note's upper-middle (not the timer at the very bottom, where
   // particles would just fall off the edge).
   const nr = note.getBoundingClientRect();
   burst(nr.left + nr.width / 2, nr.top + nr.height * 0.4, 36, 1.9);
-  requestAnimationFrame(applyPick); // wheels are visible again - restore the pick
 }
 
 // ---- Duration wheel picker (iOS Clock-style spinner drum) ----
@@ -434,6 +485,49 @@ function startFocus() {
   startTimer(total);
 }
 
+// The wheels' last-picked duration - also what per-task sessions run for.
+function lastPickMinutes() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(TIMER_PICK_KEY) || 'null');
+    if (saved) {
+      const total = (saved.h || 0) * 60 + (saved.m || 0);
+      if (total > 0) return total;
+    }
+  } catch (e) {
+    /* fall through to the default */
+  }
+  return 25;
+}
+
+function startFocusOnTask(taskId) {
+  startTimer(lastPickMinutes(), { taskId, kind: 'focus' });
+}
+
+// The next open task to switch to (in the list's time-sorted order), preferring
+// one that isn't the task just finished.
+function nextOpenTask(excludeId) {
+  const open = tasks
+    .slice()
+    .sort((a, b) => (a.time || 'zz').localeCompare(b.time || 'zz'))
+    .filter((x) => !x.done);
+  return open.find((x) => x.id !== excludeId) || null;
+}
+
+function updateDonePanel() {
+  if (!timerDoneInfo) return;
+  const doneTask = focusTaskById(timerDoneInfo.taskId);
+  timerDoneTask.textContent = doneTask ? doneTask.text : '';
+  timerDoneTask.hidden = !doneTask;
+  doneMarkBtn.hidden = !doneTask || doneTask.done;
+  doneNextBtn.hidden = !nextOpenTask(timerDoneInfo.taskId);
+}
+
+function closeDonePanel() {
+  timerDoneInfo = null;
+  updateTimerUI();
+  requestAnimationFrame(applyPick); // the wheels are back - restore the pick
+}
+
 if (timer) {
   attachWheel(wheelH, WHEEL_HOURS);
   attachWheel(wheelM, WHEEL_MINS);
@@ -442,11 +536,32 @@ if (timer) {
   timerToggle.addEventListener('click', () => (timerRunning ? pauseTimer() : resumeTimer()));
   timerReset.addEventListener('click', resetTimer);
 
+  // End-of-session prompt: the one-tap "switch" actions.
+  doneMarkBtn.addEventListener('click', () => {
+    const doneTask = focusTaskById(timerDoneInfo && timerDoneInfo.taskId);
+    if (doneTask && !doneTask.done) {
+      doneTask.done = true;
+      awardTask(doneTask.id);
+      scheduleSave();
+    }
+    closeDonePanel();
+    render();
+  });
+  doneBreakBtn.addEventListener('click', () => startTimer(5, { kind: 'break' }));
+  doneNextBtn.addEventListener('click', () => {
+    const next = nextOpenTask(timerDoneInfo && timerDoneInfo.taskId);
+    if (next) startFocusOnTask(next.id);
+    else closeDonePanel();
+  });
+  doneCloseBtn.addEventListener('click', closeDonePanel);
+
   // Restore a timer that was running/paused before a reload or relaunch.
   try {
     const saved = JSON.parse(localStorage.getItem(TIMER_KEY) || 'null');
     if (saved) {
       timerTotalMin = saved.totalMin || 0;
+      timerTaskId = saved.taskId || null;
+      timerKind = saved.kind === 'break' ? 'break' : 'focus';
       if (saved.running && saved.endsAt - Date.now() > 0) {
         timerEndsAt = saved.endsAt;
         timerActive = true;
@@ -457,6 +572,7 @@ if (timer) {
         timerActive = true;
         timerRunning = false;
       } else {
+        timerTaskId = null;
         localStorage.removeItem(TIMER_KEY); // finished while the app was closed
       }
     }
@@ -702,6 +818,7 @@ function subscribeToSync() {
       }
       render();
       renderScore();
+      updateTimerUI(); // a restored task-linked session can now show its task name
       applyingRemoteUpdate = false;
       setSyncStatus(t('synced'));
       if (!snap.exists() && (tasks.length || points)) saveNow();
@@ -870,6 +987,9 @@ function render() {
 
     const row = document.createElement('div');
     row.className = 'task-row' + (isDue ? ' due' : '') + (task.done ? ' done' : '');
+    if (timerActive && timerKind === 'focus' && task.id === timerTaskId) {
+      row.classList.add('focusing');
+    }
     // Spring the freshly-added row in, once (render() rebuilds every row, so
     // gate it on the id to avoid replaying on every re-render).
     if (task.id === justAddedId) {
@@ -905,6 +1025,17 @@ function render() {
       time.className = 'task-time';
       time.textContent = fmtTime(task.time);
       row.appendChild(time);
+    }
+
+    if (!task.done) {
+      const focus = document.createElement('button');
+      focus.className = 'focus-btn';
+      focus.type = 'button';
+      focus.title = t('focusThis');
+      focus.setAttribute('aria-label', `${t('focusThis')}: ${task.text}`);
+      focus.innerHTML = '<svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" aria-hidden="true"><path d="M8 5l11 7-11 7z"/></svg>';
+      focus.addEventListener('click', () => startFocusOnTask(task.id));
+      row.appendChild(focus);
     }
 
     const del = document.createElement('button');
@@ -1210,4 +1341,5 @@ if (savedFirebaseConfig) {
 }
 
 render();
+updateTimerUI(); // tasks are loaded now - a restored session can show its task name
 refreshQuotes(); // fire-and-forget; silently no-ops if throttled or offline

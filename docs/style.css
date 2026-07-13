@@ -492,6 +492,32 @@ button:focus-visible {
   color: var(--due);
 }
 
+/* Per-task focus button: starts a Focus Mode session on that task. */
+.focus-btn {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.focus-btn:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+/* The task a session is currently running for. */
+.task-row.focusing {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
 .empty-msg {
   font-size: 12px;
   color: var(--muted);
@@ -521,10 +547,11 @@ button:focus-visible {
   border-top: 1px dashed var(--line);
 }
 
-/* The [hidden] guard must win over the display rules below, or the idle/run
-   rows both show at once. */
+/* The [hidden] guard must win over the display rules below, or the idle/run/
+   done rows show at once. */
 .timer-idle[hidden],
-.timer-run[hidden] {
+.timer-run[hidden],
+.timer-done[hidden] {
   display: none;
 }
 
@@ -611,6 +638,59 @@ button:focus-visible {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+}
+
+.timer-run-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* The task (or "Break") a session is running for. */
+.timer-task {
+  font-size: 11px;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* End-of-session prompt: mark done / take a break / focus the next task. */
+.timer-done {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.timer-done-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.timer-done-title {
+  font-family: 'Caveat', cursive;
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.timer-done-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.timer-done-actions .text-btn {
+  font-size: 12px;
+  padding: 5px 9px;
+}
+
+.timer-done-actions .timer-ctrl {
+  margin-left: auto;
 }
 
 .timer-display {

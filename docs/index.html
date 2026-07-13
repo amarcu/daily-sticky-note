@@ -135,10 +135,27 @@
             <button class="add-btn timer-start" id="timerStart" type="button" data-i18n="startFocus">Start</button>
           </div>
           <div class="timer-run" id="timerRun" hidden>
-            <span class="timer-display" id="timerDisplay">00:00</span>
+            <div class="timer-run-main">
+              <span class="timer-display" id="timerDisplay">00:00</span>
+              <span class="timer-task" id="timerTask" hidden></span>
+            </div>
             <div class="timer-controls">
               <button class="icon-btn timer-ctrl" id="timerToggle" type="button"></button>
               <button class="icon-btn timer-ctrl" id="timerReset" type="button" data-i18n-title="timerReset" title="Reset">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+              </button>
+            </div>
+          </div>
+          <div class="timer-done" id="timerDonePanel" hidden>
+            <div class="timer-done-head">
+              <span class="timer-done-title" data-i18n="sessionDone">Session done!</span>
+              <span class="timer-task" id="timerDoneTask" hidden></span>
+            </div>
+            <div class="timer-done-actions">
+              <button id="doneMarkBtn" class="text-btn" type="button" data-i18n="markDone">Mark done</button>
+              <button id="doneBreakBtn" class="text-btn" type="button" data-i18n="takeBreak">5m break</button>
+              <button id="doneNextBtn" class="text-btn" type="button" data-i18n="focusNext">Focus next</button>
+              <button id="doneCloseBtn" class="icon-btn timer-ctrl" type="button" data-i18n-title="timerReset" title="Reset">
                 <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
               </button>
             </div>
