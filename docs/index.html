@@ -26,6 +26,7 @@
         <p class="date" id="dateLabel"></p>
       </div>
       <span class="compact-count" id="compactCount" aria-hidden="true"></span>
+      <span class="timer-badge" id="timerBadge" hidden aria-hidden="true"></span>
       <div class="header-actions">
         <button id="notifBtn" class="icon-btn" type="button" aria-pressed="false" title="Turn on reminders for tasks that have a time" aria-label="Turn on reminders for tasks that have a time">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -115,6 +116,25 @@
         </div>
 
         <p class="daily-quote" id="dailyQuote"></p>
+
+        <div class="timer" id="timer">
+          <div class="timer-idle" id="timerIdle">
+            <span class="timer-label" data-i18n="timerLabel">Timer</span>
+            <button class="timer-chip" type="button" data-min="15">15m</button>
+            <button class="timer-chip" type="button" data-min="25">25m</button>
+            <button class="timer-chip" type="button" data-min="45">45m</button>
+            <button class="timer-chip" type="button" data-min="60">1h</button>
+          </div>
+          <div class="timer-run" id="timerRun" hidden>
+            <span class="timer-display" id="timerDisplay">00:00</span>
+            <div class="timer-controls">
+              <button class="icon-btn timer-ctrl" id="timerToggle" type="button"></button>
+              <button class="icon-btn timer-ctrl" id="timerReset" type="button" data-i18n-title="timerReset" title="Reset">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 

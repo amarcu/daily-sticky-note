@@ -9,6 +9,7 @@ const POS_KEY = 'stickyPlanner.position';
 const NOTIF_KEY = 'stickyPlanner.notifEnabled';
 const LANG_KEY = 'stickyPlanner.lang';
 const COMPACT_KEY = 'stickyPlanner.compact';
+const TIMER_KEY = 'stickyPlanner.timer';
 const POINTS_KEY = 'stickyPlanner.points';
 const AWARDED_KEY = 'stickyPlanner.awarded';
 const QUOTE_CACHE_KEY = 'stickyPlanner.quoteCache';
@@ -63,6 +64,13 @@ const compactCount = document.getElementById('compactCount');
 const startupRow = document.getElementById('startupRow');
 const startupHint = document.getElementById('startupHint');
 const autostartToggle = document.getElementById('autostartToggle');
+const timer = document.getElementById('timer');
+const timerIdle = document.getElementById('timerIdle');
+const timerRun = document.getElementById('timerRun');
+const timerDisplay = document.getElementById('timerDisplay');
+const timerToggle = document.getElementById('timerToggle');
+const timerReset = document.getElementById('timerReset');
+const timerBadge = document.getElementById('timerBadge');
 
 // Desktop build detection. The Tauri shell exposes a global `window.__TAURI__`
 // object (we opt into this with `withGlobalTauri` in tauri.conf.json); the plain
@@ -125,6 +133,7 @@ function applyLanguage() {
   renderScore();
   pickDailyQuote();
   applyCompact(); // re-apply the collapse label + count in the new language
+  if (typeof updateTimerUI === 'function') updateTimerUI(); // re-label pause/resume
 }
 
 function setLanguage(l) {
@@ -195,6 +204,160 @@ function toggleCompact() {
 
 if (collapseBtn) {
   collapseBtn.addEventListener('click', toggleCompact);
+}
+
+// ---- Focus timer -----------------------------------------------------------
+
+const ICON_PAUSE =
+  '<svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>';
+const ICON_PLAY =
+  '<svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M8 5l11 7-11 7z"/></svg>';
+
+let timerInterval = null;
+let timerEndsAt = 0; // ms timestamp when it fires (while running)
+let timerRemainingMs = 0; // remaining when paused
+let timerActive = false; // a session exists (running or paused)
+let timerRunning = false; // actively counting down
+let timerTotalMin = 0; // for restoring the chip that was chosen
+
+function fmtClock(ms) {
+  const total = Math.max(0, Math.round(ms / 1000));
+  const m = Math.floor(total / 60);
+  const s = total % 60;
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
+function timerRemaining() {
+  return timerRunning ? timerEndsAt - Date.now() : timerRemainingMs;
+}
+
+function persistTimer() {
+  if (!timerActive) {
+    localStorage.removeItem(TIMER_KEY);
+    return;
+  }
+  localStorage.setItem(
+    TIMER_KEY,
+    JSON.stringify({ running: timerRunning, endsAt: timerEndsAt, remainingMs: timerRemainingMs, totalMin: timerTotalMin })
+  );
+}
+
+function updateTimerUI() {
+  if (!timer) return;
+  timerIdle.hidden = timerActive;
+  timerRun.hidden = !timerActive;
+  const label = fmtClock(timerRemaining());
+  timerDisplay.textContent = label;
+  timerBadge.textContent = label;
+  timerBadge.hidden = !timerActive;
+  timerRun.classList.toggle('paused', timerActive && !timerRunning);
+  timerToggle.innerHTML = timerRunning ? ICON_PAUSE : ICON_PLAY;
+  const ttl = timerRunning ? t('timerPause') : t('timerResume');
+  timerToggle.title = ttl;
+  timerToggle.setAttribute('aria-label', ttl);
+}
+
+function timerTick() {
+  if (!timerRunning) return;
+  if (timerEndsAt - Date.now() <= 0) {
+    completeTimer();
+    return;
+  }
+  const label = fmtClock(timerRemaining());
+  timerDisplay.textContent = label;
+  timerBadge.textContent = label;
+}
+
+function startTimer(minutes) {
+  timerTotalMin = minutes;
+  timerRemainingMs = minutes * 60000;
+  timerEndsAt = Date.now() + timerRemainingMs;
+  timerActive = true;
+  timerRunning = true;
+  clearInterval(timerInterval);
+  timerInterval = setInterval(timerTick, 250);
+  persistTimer();
+  updateTimerUI();
+  // In the browser, make sure we're allowed to notify at the end.
+  if (!isDesktop && 'Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+}
+
+function pauseTimer() {
+  if (!timerRunning) return;
+  timerRemainingMs = Math.max(0, timerEndsAt - Date.now());
+  timerRunning = false;
+  clearInterval(timerInterval);
+  timerInterval = null;
+  persistTimer();
+  updateTimerUI();
+}
+
+function resumeTimer() {
+  if (timerRunning || !timerActive) return;
+  timerEndsAt = Date.now() + timerRemainingMs;
+  timerRunning = true;
+  clearInterval(timerInterval);
+  timerInterval = setInterval(timerTick, 250);
+  persistTimer();
+  updateTimerUI();
+}
+
+function resetTimer() {
+  clearInterval(timerInterval);
+  timerInterval = null;
+  timerActive = false;
+  timerRunning = false;
+  timerRemainingMs = 0;
+  timerEndsAt = 0;
+  persistTimer();
+  updateTimerUI();
+}
+
+function completeTimer() {
+  clearInterval(timerInterval);
+  timerInterval = null;
+  timerActive = false;
+  timerRunning = false;
+  persistTimer();
+  updateTimerUI();
+  fireNotification(t('timerDone'), t('timerDoneBody'));
+  // Burst from the note's upper-middle (not the timer at the very bottom, where
+  // particles would just fall off the edge).
+  const nr = note.getBoundingClientRect();
+  burst(nr.left + nr.width / 2, nr.top + nr.height * 0.4, 36, 1.9);
+}
+
+if (timer) {
+  timer.querySelectorAll('.timer-chip').forEach((chip) => {
+    chip.addEventListener('click', () => startTimer(Number(chip.dataset.min)));
+  });
+  timerToggle.addEventListener('click', () => (timerRunning ? pauseTimer() : resumeTimer()));
+  timerReset.addEventListener('click', resetTimer);
+
+  // Restore a timer that was running/paused before a reload or relaunch.
+  try {
+    const saved = JSON.parse(localStorage.getItem(TIMER_KEY) || 'null');
+    if (saved) {
+      timerTotalMin = saved.totalMin || 0;
+      if (saved.running && saved.endsAt - Date.now() > 0) {
+        timerEndsAt = saved.endsAt;
+        timerActive = true;
+        timerRunning = true;
+        timerInterval = setInterval(timerTick, 250);
+      } else if (!saved.running && saved.remainingMs > 0) {
+        timerRemainingMs = saved.remainingMs;
+        timerActive = true;
+        timerRunning = false;
+      } else {
+        localStorage.removeItem(TIMER_KEY); // finished while the app was closed
+      }
+    }
+  } catch (e) {
+    /* ignore a corrupt timer entry */
+  }
+  updateTimerUI();
 }
 
 if (langSelect) {

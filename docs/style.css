@@ -508,6 +508,98 @@ button:focus-visible {
   display: none;
 }
 
+/* Focus timer widget (bottom of the note) */
+.timer {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--line);
+}
+
+/* The [hidden] guard must win over the display rules below, or the idle/run
+   rows both show at once. */
+.timer-idle[hidden],
+.timer-run[hidden] {
+  display: none;
+}
+
+.timer-idle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.timer-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-soft);
+  margin-right: auto;
+}
+
+.timer-chip {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 9px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.timer-chip:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.timer-run {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.timer-display {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 24px;
+  font-weight: 500;
+  color: var(--accent);
+  letter-spacing: 0.5px;
+}
+
+.timer-run.paused .timer-display {
+  color: var(--muted);
+}
+
+.timer-controls {
+  display: flex;
+  gap: 4px;
+}
+
+.timer-ctrl {
+  width: 28px;
+  height: 28px;
+}
+
+/* Remaining time shown in the header only while collapsed. */
+.timer-badge {
+  display: none;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-soft);
+  padding: 2px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+  align-self: center;
+}
+
+.note.compact .timer-badge:not([hidden]) {
+  display: inline-block;
+}
+
 /* Update banner (desktop only, shown when a newer version is available) */
 .update-banner[hidden] {
   display: none; /* author display:flex below would otherwise override [hidden] */

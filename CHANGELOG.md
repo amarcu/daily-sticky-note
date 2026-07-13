@@ -3,6 +3,16 @@
 All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.4.5]
+
+### Added
+
+- **Focus timer**: a small widget at the bottom of the note - pick 15m / 25m /
+  45m / 1h and it counts down, with pause/reset. When it finishes you get a
+  notification (and a little confetti). While the note is collapsed, the
+  remaining time shows in the header bar. A running timer survives a reload or
+  relaunch.
+
 ## [1.4.4]
 
 ### Added
