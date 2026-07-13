@@ -60,6 +60,12 @@
             <select id="langSelect" class="lang-select"></select>
           </div>
 
+          <div class="startup-row" id="startupRow" hidden>
+            <label class="field-label" for="autostartToggle" data-i18n="startAtLogin">Start at login</label>
+            <input type="checkbox" id="autostartToggle" class="toggle" />
+          </div>
+          <p class="hint startup-hint" id="startupHint" hidden data-i18n="startAtLoginHint">Opens automatically when you log in. Also in the tray icon menu.</p>
+
           <div id="localOnlyView">
             <p class="hint" data-i18n="localOnly">Tasks stay on this device only.</p>
             <button id="showConnectFormBtn" class="text-btn" type="button" data-i18n="connectFirebase">Connect Firebase for cloud sync</button>

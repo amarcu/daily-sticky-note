@@ -60,6 +60,9 @@ const updateText = document.getElementById('updateText');
 const updateBtn = document.getElementById('updateBtn');
 const collapseBtn = document.getElementById('collapseBtn');
 const compactCount = document.getElementById('compactCount');
+const startupRow = document.getElementById('startupRow');
+const startupHint = document.getElementById('startupHint');
+const autostartToggle = document.getElementById('autostartToggle');
 
 // Desktop build detection. The Tauri shell exposes a global `window.__TAURI__`
 // object (we opt into this with `withGlobalTauri` in tauri.conf.json); the plain
@@ -782,6 +785,33 @@ if (isDesktop) {
       updateText.textContent = t('updateFailed');
       updateBtn.disabled = false;
     }
+  });
+
+  // Start-at-login: show the in-app toggle (desktop only) and reflect the real
+  // OS state. The Rust side does the per-platform registration and keeps the
+  // tray checkbox in sync.
+  if (startupRow) startupRow.hidden = false;
+  if (startupHint) startupHint.hidden = false;
+  const refreshAutostart = () =>
+    invoke('autostart_enabled')
+      .then((on) => { if (autostartToggle) autostartToggle.checked = !!on; })
+      .catch((e) => console.error('autostart check failed', e));
+  refreshAutostart();
+  if (autostartToggle) {
+    autostartToggle.addEventListener('change', async () => {
+      try {
+        const now = await invoke('set_autostart', { enable: autostartToggle.checked });
+        autostartToggle.checked = !!now;
+      } catch (e) {
+        console.error('set autostart failed', e);
+        autostartToggle.checked = !autostartToggle.checked; // revert on failure
+      }
+    });
+  }
+  // Re-sync the toggle whenever the settings panel is opened (it may have been
+  // changed from the tray menu meanwhile).
+  syncBtn.addEventListener('click', () => {
+    if (!syncPanel.hidden) refreshAutostart();
   });
 } else {
   function clampPosition(pos) {

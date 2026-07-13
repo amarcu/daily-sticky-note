@@ -571,6 +571,62 @@ button:focus-visible {
   color: var(--ink);
 }
 
+/* Start-at-login row + toggle switch */
+.startup-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.startup-row .field-label {
+  margin: 0;
+}
+
+.startup-hint {
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+.toggle {
+  appearance: none;
+  -webkit-appearance: none;
+  flex-shrink: 0;
+  width: 38px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--line);
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.toggle::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--paper);
+  transition: transform 0.2s ease;
+}
+
+.toggle:checked {
+  background: var(--accent);
+}
+
+.toggle:checked::before {
+  transform: translateX(16px);
+}
+
+.toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 /* Points & level bar */
 .score-bar {
   margin-top: 14px;

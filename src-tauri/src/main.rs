@@ -91,6 +91,31 @@ async fn install_update(app: AppHandle) -> Result<(), String> {
     Ok(())
 }
 
+// Whether the app is registered to start at login (per-platform: a LaunchAgent
+// on macOS, a Run registry key on Windows, an autostart .desktop on Linux - all
+// handled by tauri-plugin-autostart).
+#[tauri::command]
+fn autostart_enabled(app: AppHandle) -> bool {
+    app.autolaunch().is_enabled().unwrap_or(false)
+}
+
+// Turn start-at-login on or off, keep the tray checkbox in sync, and return the
+// resulting state so the UI can reflect what actually happened.
+#[tauri::command]
+fn set_autostart(app: AppHandle, enable: bool) -> bool {
+    let autostart = app.autolaunch();
+    let _ = if enable {
+        autostart.enable()
+    } else {
+        autostart.disable()
+    };
+    let now = autostart.is_enabled().unwrap_or(false);
+    if let Some(state) = app.try_state::<TrayState>() {
+        let _ = state.open_at_login_item.set_checked(now);
+    }
+    now
+}
+
 fn main() {
     // CommandOrControl+Shift+D, matching the old Electron global shortcut:
     // Cmd on macOS, Ctrl elsewhere.
@@ -120,7 +145,13 @@ fn main() {
                 })
                 .build(),
         )
-        .invoke_handler(tauri::generate_handler![notify, check_update, install_update])
+        .invoke_handler(tauri::generate_handler![
+            notify,
+            check_update,
+            install_update,
+            autostart_enabled,
+            set_autostart
+        ])
         .setup(move |app| {
             // A menu-bar / tray widget, not a Dock app: keep it out of the
             // macOS Dock so it behaves like the Electron tray build did.

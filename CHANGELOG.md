@@ -3,6 +3,15 @@
 All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.4.4]
+
+### Added
+
+- **"Start at login" toggle in the app** (desktop): the settings panel now has a
+  clear on/off switch for launching at login, showing the real state, with a
+  short note on how it works. It stays in sync with the tray-menu option. This
+  makes the autostart setting discoverable instead of hidden in the tray.
+
 ## [1.4.3]
 
 ### Added
