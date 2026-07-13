@@ -3,6 +3,17 @@
 All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.4.9]
+
+### Added
+
+- **Notifications setup**: turning on reminders now fires a "Reminders on"
+  confirmation notification (on macOS this registers the app in Notification
+  Center so you can allow it), the browser build requests permission when you
+  enable reminders or start a timer, and the settings panel has an **"Open
+  settings"** button that jumps straight to the OS notification settings if
+  notifications are being blocked.
+
 ## [1.4.8]
 
 ### Fixed

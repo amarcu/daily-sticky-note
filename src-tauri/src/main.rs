@@ -91,6 +91,21 @@ async fn install_update(app: AppHandle) -> Result<(), String> {
     Ok(())
 }
 
+// Open the OS notification settings so the user can allow notifications for the
+// app (macOS has no programmatic permission prompt for this plugin, especially
+// on an unsigned build).
+#[tauri::command]
+fn open_notification_settings() {
+    #[cfg(target_os = "macos")]
+    let _ = std::process::Command::new("open")
+        .arg("x-apple.systempreferences:com.apple.preference.notifications")
+        .spawn();
+    #[cfg(target_os = "windows")]
+    let _ = std::process::Command::new("cmd")
+        .args(["/C", "start", "ms-settings:notifications"])
+        .spawn();
+}
+
 // Whether the app is registered to start at login (per-platform: a LaunchAgent
 // on macOS, a Run registry key on Windows, an autostart .desktop on Linux - all
 // handled by tauri-plugin-autostart).
@@ -150,7 +165,8 @@ fn main() {
             check_update,
             install_update,
             autostart_enabled,
-            set_autostart
+            set_autostart,
+            open_notification_settings
         ])
         .setup(move |app| {
             // A menu-bar / tray widget, not a Dock app: keep it out of the

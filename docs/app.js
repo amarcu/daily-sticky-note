@@ -64,6 +64,8 @@ const compactCount = document.getElementById('compactCount');
 const startupRow = document.getElementById('startupRow');
 const startupHint = document.getElementById('startupHint');
 const autostartToggle = document.getElementById('autostartToggle');
+const notifSettingsRow = document.getElementById('notifSettingsRow');
+const notifSettingsBtn = document.getElementById('notifSettingsBtn');
 const timer = document.getElementById('timer');
 const timerIdle = document.getElementById('timerIdle');
 const timerRun = document.getElementById('timerRun');
@@ -293,10 +295,8 @@ function startTimer(minutes) {
   timerInterval = setInterval(timerTick, 250);
   persistTimer();
   updateTimerUI();
-  // In the browser, make sure we're allowed to notify at the end.
-  if (!isDesktop && 'Notification' in window && Notification.permission === 'default') {
-    Notification.requestPermission();
-  }
+  // Make sure we're allowed to notify at the end (browser prompt on the web).
+  requestNotifPermission();
 }
 
 function pauseTimer() {
@@ -960,6 +960,9 @@ notifBtn.addEventListener('click', async () => {
   }
   notifEnabled = granted; // stays off if the browser/OS denied permission
   updateNotifButton();
+  // A confirmation notification proves it works and, on macOS, registers the app
+  // in Notification Center so it shows up (and can be allowed) in system settings.
+  if (granted) fireNotification(t('notifEnabledTitle'), t('notifEnabledBody'));
 });
 
 setInterval(render, 15000);
@@ -1066,6 +1069,14 @@ if (isDesktop) {
   // tray checkbox in sync.
   if (startupRow) startupRow.hidden = false;
   if (startupHint) startupHint.hidden = false;
+  // Desktop notifications can be blocked at the OS level (common on unsigned
+  // macOS builds); give a one-click way to open the system notification pane.
+  if (notifSettingsRow) notifSettingsRow.hidden = false;
+  if (notifSettingsBtn) {
+    notifSettingsBtn.addEventListener('click', () => {
+      invoke('open_notification_settings').catch((e) => console.error('open settings failed', e));
+    });
+  }
   const refreshAutostart = () =>
     invoke('autostart_enabled')
       .then((on) => { if (autostartToggle) autostartToggle.checked = !!on; })
