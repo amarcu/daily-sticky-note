@@ -71,6 +71,9 @@ const timerDisplay = document.getElementById('timerDisplay');
 const timerToggle = document.getElementById('timerToggle');
 const timerReset = document.getElementById('timerReset');
 const timerBadge = document.getElementById('timerBadge');
+const wheelH = document.getElementById('wheelH');
+const wheelM = document.getElementById('wheelM');
+const timerStart = document.getElementById('timerStart');
 
 // Desktop build detection. The Tauri shell exposes a global `window.__TAURI__`
 // object (we opt into this with `withGlobalTauri` in tauri.conf.json); the plain
@@ -222,9 +225,11 @@ let timerTotalMin = 0; // for restoring the chip that was chosen
 
 function fmtClock(ms) {
   const total = Math.max(0, Math.round(ms / 1000));
-  const m = Math.floor(total / 60);
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
   const s = total % 60;
-  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  const pad = (n) => String(n).padStart(2, '0');
+  return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
 }
 
 function timerRemaining() {
@@ -313,6 +318,7 @@ function resetTimer() {
   timerEndsAt = 0;
   persistTimer();
   updateTimerUI();
+  requestAnimationFrame(applyPick); // wheels are visible again - restore the pick
 }
 
 function completeTimer() {
@@ -327,12 +333,102 @@ function completeTimer() {
   // particles would just fall off the edge).
   const nr = note.getBoundingClientRect();
   burst(nr.left + nr.width / 2, nr.top + nr.height * 0.4, 36, 1.9);
+  requestAnimationFrame(applyPick); // wheels are visible again - restore the pick
+}
+
+// ---- Duration wheel picker (iOS Clock-style spinner drum) ----
+const WHEEL_ITEM_H = 30;
+const WHEEL_HOURS = 13; // 0..12
+const WHEEL_MINS = 60; // 0..59
+const TIMER_PICK_KEY = 'stickyPlanner.timerPick';
+
+function buildWheel(el, count) {
+  const frag = document.createDocumentFragment();
+  for (let i = 0; i < count; i++) {
+    const item = document.createElement('div');
+    item.className = 'wheel-item';
+    item.textContent = String(i).padStart(2, '0');
+    frag.appendChild(item);
+  }
+  el.appendChild(frag);
+}
+
+function wheelValue(el) {
+  return Math.max(0, Math.round(el.scrollTop / WHEEL_ITEM_H));
+}
+
+// Curve each number away from the centered row so it reads as a rolling drum.
+function updateWheel3D(el) {
+  const center = el.scrollTop / WHEEL_ITEM_H;
+  const items = el.children;
+  for (let i = 0; i < items.length; i++) {
+    const dist = i - center;
+    const ad = Math.abs(dist);
+    if (ad > 3.4) {
+      items[i].style.opacity = '0';
+      continue;
+    }
+    const rot = Math.max(-70, Math.min(70, dist * -22));
+    items[i].style.transform = `rotateX(${rot}deg)`;
+    items[i].style.opacity = String(Math.max(0.12, 1 - ad * 0.32));
+  }
+}
+
+function setWheel(el, val) {
+  el.scrollTop = val * WHEEL_ITEM_H;
+  updateWheel3D(el);
+}
+
+function attachWheel(el, count) {
+  buildWheel(el, count);
+  let raf = 0;
+  el.addEventListener(
+    'scroll',
+    () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        updateWheel3D(el);
+      });
+    },
+    { passive: true }
+  );
+  el.addEventListener('keydown', (e) => {
+    if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+    e.preventDefault();
+    const next = wheelValue(el) + (e.key === 'ArrowDown' ? 1 : -1);
+    setWheel(el, Math.max(0, Math.min(count - 1, next)));
+  });
+}
+
+// Restore the last picked duration (default 25 min) into the wheels.
+function applyPick() {
+  if (!wheelH || !wheelM) return;
+  let pick = { h: 0, m: 25 };
+  try {
+    const saved = JSON.parse(localStorage.getItem(TIMER_PICK_KEY) || 'null');
+    if (saved) pick = saved;
+  } catch (e) {
+    /* keep the default */
+  }
+  setWheel(wheelH, Math.min(WHEEL_HOURS - 1, pick.h || 0));
+  setWheel(wheelM, Math.min(WHEEL_MINS - 1, pick.m == null ? 25 : pick.m));
+}
+
+function startFocus() {
+  const h = wheelValue(wheelH);
+  const m = wheelValue(wheelM);
+  const total = h * 60 + m;
+  if (total <= 0) return; // nothing picked
+  localStorage.setItem(TIMER_PICK_KEY, JSON.stringify({ h, m }));
+  startTimer(total);
 }
 
 if (timer) {
-  timer.querySelectorAll('.timer-chip').forEach((chip) => {
-    chip.addEventListener('click', () => startTimer(Number(chip.dataset.min)));
-  });
+  attachWheel(wheelH, WHEEL_HOURS);
+  attachWheel(wheelM, WHEEL_MINS);
+  applyPick();
+  timerStart.addEventListener('click', startFocus);
   timerToggle.addEventListener('click', () => (timerRunning ? pauseTimer() : resumeTimer()));
   timerReset.addEventListener('click', resetTimer);
 

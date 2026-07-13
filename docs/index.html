@@ -119,11 +119,15 @@
 
         <div class="timer" id="timer">
           <div class="timer-idle" id="timerIdle">
-            <span class="timer-label" data-i18n="timerLabel">Timer</span>
-            <button class="timer-chip" type="button" data-min="15">15m</button>
-            <button class="timer-chip" type="button" data-min="25">25m</button>
-            <button class="timer-chip" type="button" data-min="45">45m</button>
-            <button class="timer-chip" type="button" data-min="60">1h</button>
+            <span class="timer-label" data-i18n="timerLabel">Focus Mode</span>
+            <div class="picker" id="picker">
+              <div class="picker-band" aria-hidden="true"></div>
+              <div class="wheel" id="wheelH" tabindex="0" role="spinbutton" aria-label="hours"></div>
+              <span class="wheel-unit">h</span>
+              <div class="wheel" id="wheelM" tabindex="0" role="spinbutton" aria-label="minutes"></div>
+              <span class="wheel-unit">min</span>
+            </div>
+            <button class="add-btn timer-start" id="timerStart" type="button" data-i18n="startFocus">Start</button>
           </div>
           <div class="timer-run" id="timerRun" hidden>
             <span class="timer-display" id="timerDisplay">00:00</span>

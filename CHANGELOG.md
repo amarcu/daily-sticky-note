@@ -3,6 +3,15 @@
 All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.4.7]
+
+### Changed
+
+- Focus Mode now sets its duration with an **iOS Clock-style spinner wheel**
+  (roll the hours and minutes drums) instead of preset buttons, with a Start
+  button. The last picked duration is remembered. Countdowns of an hour or more
+  show as H:MM:SS.
+
 ## [1.4.6]
 
 ### Changed
