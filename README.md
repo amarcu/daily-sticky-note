@@ -176,8 +176,10 @@ npm run dev         # builds the Rust shell and launches the app
 - The link/bell icons work the same. A third "x" icon appears only in
   this build - it hides the note to the tray rather than closing it,
   since there's no window titlebar to do that from.
-- Tray menu: show/hide, toggle always-on-top, quit. Left-click the tray
-  icon to show/hide; right-click for the menu.
+- Tray menu: show/hide, toggle always-on-top, open at login, check for
+  updates, quit. Left-click the tray icon to show/hide; right-click for
+  the menu. (The app also checks for updates on launch and every few
+  hours while running.)
 - `Cmd/Ctrl+Shift+D` toggles visibility from anywhere, even when
   another app is focused.
 

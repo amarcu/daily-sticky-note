@@ -561,10 +561,42 @@ button:focus-visible {
   gap: 8px;
 }
 
+.timer-label-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.focus-icon {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
 .timer-label {
   font-size: 12px;
   font-weight: 500;
   color: var(--ink-soft);
+}
+
+/* Draw the eye to the widget when a session starts from a task row up top. */
+@keyframes timerPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(59, 110, 113, 0.45);
+  }
+  100% {
+    box-shadow: 0 0 0 12px rgba(59, 110, 113, 0);
+  }
+}
+
+.timer.pulse {
+  animation: timerPulse 0.7s ease-out 2;
+  border-radius: 8px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .timer.pulse {
+    animation: none;
+  }
 }
 
 /* iOS-style spinner drum for picking the focus duration. */

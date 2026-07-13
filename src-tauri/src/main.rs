@@ -6,7 +6,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use tauri::{
     menu::{CheckMenuItem, CheckMenuItemBuilder, MenuBuilder, MenuItem, MenuItemBuilder},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
-    AppHandle, Manager, WindowEvent, Wry,
+    AppHandle, Emitter, Manager, WindowEvent, Wry,
 };
 use tauri_plugin_autostart::{MacosLauncher, ManagerExt as AutostartManagerExt};
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
@@ -199,11 +199,14 @@ fn main() {
                 CheckMenuItemBuilder::with_id("open_at_login", "Open at login")
                     .checked(login_enabled)
                     .build(app)?;
+            let check_updates =
+                MenuItemBuilder::with_id("check_updates", "Check for updates").build(app)?;
             let quit = MenuItemBuilder::with_id("quit", "Quit").build(app)?;
             let menu = MenuBuilder::new(app)
                 .item(&show_hide)
                 .item(&always_on_top_item)
                 .item(&open_at_login_item)
+                .item(&check_updates)
                 .separator()
                 .item(&quit)
                 .build()?;
@@ -231,6 +234,49 @@ fn main() {
                         if let Some(window) = app.get_webview_window(MAIN_WINDOW) {
                             let _ = window.set_always_on_top(next);
                         }
+                    }
+                    "check_updates" => {
+                        // Check right now; surface the result either as the
+                        // in-app banner (update found - window shown so it's
+                        // visible) or a notification (up to date / failed).
+                        let app = app.clone();
+                        tauri::async_runtime::spawn(async move {
+                            let result = match app.updater() {
+                                Ok(updater) => updater.check().await.map_err(|e| e.to_string()),
+                                Err(e) => Err(e.to_string()),
+                            };
+                            match result {
+                                Ok(Some(update)) => {
+                                    let _ = app.emit("update-available", update.version.clone());
+                                    if let Some(window) = app.get_webview_window(MAIN_WINDOW) {
+                                        let _ = window.show();
+                                        let _ = window.set_focus();
+                                    }
+                                    if let Some(state) = app.try_state::<TrayState>() {
+                                        let _ = state.show_hide.set_text("Hide note");
+                                    }
+                                }
+                                Ok(None) => {
+                                    let _ = app
+                                        .notification()
+                                        .builder()
+                                        .title("Daily Sticky Note")
+                                        .body(format!(
+                                            "You're up to date (v{}).",
+                                            app.package_info().version
+                                        ))
+                                        .show();
+                                }
+                                Err(e) => {
+                                    let _ = app
+                                        .notification()
+                                        .builder()
+                                        .title("Daily Sticky Note")
+                                        .body(format!("Update check failed: {e}"))
+                                        .show();
+                                }
+                            }
+                        });
                     }
                     "open_at_login" => {
                         let autostart = app.autolaunch();

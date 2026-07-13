@@ -3,6 +3,21 @@
 All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.5.1]
+
+### Added
+
+- **"Check for updates" in the tray menu**: checks immediately and either shows
+  the in-app update banner (bringing the note to the front) or a "You're up to
+  date" notification. The app also re-checks automatically every 6 hours while
+  running, instead of only at launch.
+
+### Changed
+
+- The per-task focus button is now a **stopwatch icon**, matching a new
+  stopwatch next to the Focus Mode label, and starting a session **pulses the
+  widget** - so the task button and the timer visibly read as one feature.
+
 ## [1.5.0]
 
 ### Added

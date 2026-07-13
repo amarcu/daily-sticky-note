@@ -326,6 +326,13 @@ function startTimer(minutes, opts = {}) {
   persistTimer();
   updateTimerUI();
   render(); // highlight the focused task's row
+  // Pulse the widget so the eye lands where the session just started (it lives
+  // at the bottom, easy to miss when starting from a task row up top).
+  if (timer) {
+    timer.classList.remove('pulse');
+    void timer.offsetWidth; // restart the animation if it was mid-run
+    timer.classList.add('pulse');
+  }
   // Make sure we're allowed to notify at the end (browser prompt on the web).
   requestNotifPermission();
 }
@@ -532,6 +539,7 @@ if (timer) {
   attachWheel(wheelH, WHEEL_HOURS);
   attachWheel(wheelM, WHEEL_MINS);
   applyPick();
+  timer.addEventListener('animationend', () => timer.classList.remove('pulse'));
   timerStart.addEventListener('click', startFocus);
   timerToggle.addEventListener('click', () => (timerRunning ? pauseTimer() : resumeTimer()));
   timerReset.addEventListener('click', resetTimer);
@@ -1033,7 +1041,9 @@ function render() {
       focus.type = 'button';
       focus.title = t('focusThis');
       focus.setAttribute('aria-label', `${t('focusThis')}: ${task.text}`);
-      focus.innerHTML = '<svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" aria-hidden="true"><path d="M8 5l11 7-11 7z"/></svg>';
+      // Same stopwatch glyph as the Focus Mode widget's label, so the two read
+      // as one feature.
+      focus.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="14" r="7"/><path d="M12 11v3l2 2M9 2h6M12 2v3"/></svg>';
       focus.addEventListener('click', () => startFocusOnTask(task.id));
       row.appendChild(focus);
     }
@@ -1170,18 +1180,29 @@ if (isDesktop) {
     }
   };
 
-  // On launch, ask whether a newer release exists; if so, show a banner that
-  // downloads, installs, and relaunches into it on one click (all handled on
-  // the Rust side). Silent if offline or the check fails.
+  // Ask whether a newer release exists; if so, show a banner that downloads,
+  // installs, and relaunches into it on one click (all handled on the Rust
+  // side). Checks on launch and every 6 hours after - this is a long-lived
+  // tray widget, so a launch-only check could lag behind for days. The tray
+  // menu's "Check for updates" runs the same check on demand (via the
+  // update-available event when it finds one). Silent if offline or failing.
   const invoke = window.__TAURI__.core.invoke;
-  invoke('check_update')
-    .then((version) => {
-      if (!version) return;
-      updateText.textContent = t('updateReady', { v: version });
-      updateBtn.textContent = t('updateNow');
-      updateBanner.hidden = false;
-    })
-    .catch((e) => console.error('update check failed', e));
+  const showUpdateBanner = (version) => {
+    updateText.textContent = t('updateReady', { v: version });
+    updateBtn.textContent = t('updateNow');
+    updateBanner.hidden = false;
+  };
+  const runUpdateCheck = () =>
+    invoke('check_update')
+      .then((version) => {
+        if (version) showUpdateBanner(version);
+      })
+      .catch((e) => console.error('update check failed', e));
+  runUpdateCheck();
+  setInterval(runUpdateCheck, 6 * 60 * 60 * 1000);
+  window.__TAURI__.event
+    .listen('update-available', (e) => showUpdateBanner(e.payload))
+    .catch((e) => console.error('update listener failed', e));
 
   updateBtn.addEventListener('click', async () => {
     updateBtn.disabled = true;
