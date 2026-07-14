@@ -3,6 +3,18 @@
 All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.6.1]
+
+### Fixed
+
+- **Daily quotes are back on tone.** The background top-up had been pulling
+  from a generic famous-quotes API, which mixed Title-Cased philosophy
+  ("Morality Is The Herd-Instinct In The Individual.") into the gentle daily
+  nudges. Quotes now come from a curated `quotes-extra.json` in this repo
+  (served via GitHub Pages), in all four languages - so the pool can keep
+  growing without an app update, and the tone stays consistent. Existing
+  installs clean out the old cached quotes automatically.
+
 ## [1.6.0]
 
 ### Added

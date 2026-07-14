@@ -12,7 +12,7 @@ const COMPACT_KEY = 'stickyPlanner.compact';
 const TIMER_KEY = 'stickyPlanner.timer';
 const POINTS_KEY = 'stickyPlanner.points';
 const AWARDED_KEY = 'stickyPlanner.awarded';
-const QUOTE_CACHE_KEY = 'stickyPlanner.quoteCache';
+const QUOTE_CACHE_KEY = 'stickyPlanner.quoteCache2'; // v2: per-language, curated source
 const QUOTE_REFRESHED_KEY = 'stickyPlanner.quoteRefreshedAt';
 const FIREBASE_SDK_VERSION = '12.15.0';
 
@@ -20,7 +20,6 @@ const POINTS_PER_TASK = 10;
 // Only try to top up the quote pool every few days, and only for English (the
 // public API is English) - the bundled sets already cover every language.
 const QUOTE_REFRESH_EVERY_MS = 3 * 24 * 60 * 60 * 1000;
-const QUOTE_API = 'https://dummyjson.com/quotes?limit=30';
 const QUOTE_CACHE_CAP = 200;
 
 const dateLabel = document.getElementById('dateLabel');
@@ -699,17 +698,17 @@ function dayOfYear(d) {
 function loadQuoteCache() {
   try {
     const raw = localStorage.getItem(QUOTE_CACHE_KEY);
-    const arr = raw ? JSON.parse(raw) : [];
-    return Array.isArray(arr) ? arr : [];
+    const obj = raw ? JSON.parse(raw) : null;
+    return obj && typeof obj === 'object' && !Array.isArray(obj) ? obj : {};
   } catch (e) {
-    return [];
+    return {};
   }
 }
 
 function quotesForLang(l) {
   const base = QUOTES[l] || QUOTES.en;
-  // The background refresh only fetches English, so only the English pool grows.
-  const pool = l === 'en' ? base.concat(loadQuoteCache()) : base.slice();
+  const extra = loadQuoteCache()[l];
+  const pool = Array.isArray(extra) ? base.concat(extra) : base.slice();
   return [...new Set(pool)];
 }
 
@@ -720,25 +719,47 @@ function pickDailyQuote() {
   dailyQuote.textContent = pool[dayOfYear(new Date()) % pool.length];
 }
 
-// Try to grow the English pool from a public API. Deliberately swallows every
-// error: no network, API down, bad payload - all just leave the bundle in place.
+// A generic quotes API turned out to serve Title-Cased philosophy rather than
+// gentle nudges; reject anything that looks like that if it ever sneaks in.
+function looksTitleCased(s) {
+  const words = s.split(/\s+/).filter((w) => /[a-z]/i.test(w));
+  if (words.length < 4) return false;
+  const caps = words.filter((w) => /^[A-Z]/.test(w)).length;
+  return caps / words.length > 0.7;
+}
+
+// Top up the per-language pools from our own curated quotes-extra.json, served
+// by the project's GitHub Pages site (which we control, so the tone stays
+// right, and it sends CORS headers). Deliberately swallows every error: no
+// network, file missing, bad payload - all just leave the bundle in place.
 async function refreshQuotes() {
   try {
     const last = Number(localStorage.getItem(QUOTE_REFRESHED_KEY)) || 0;
     if (Date.now() - last < QUOTE_REFRESH_EVERY_MS) return;
     localStorage.setItem(QUOTE_REFRESHED_KEY, String(Date.now())); // throttle even if this attempt fails
 
-    const skip = Math.floor(Math.random() * 1400);
-    const res = await fetch(`${QUOTE_API}&skip=${skip}`);
+    // The web build lives next to the file; the desktop build fetches the
+    // Pages copy so new quotes reach it without an app update.
+    const url = isDesktop
+      ? 'https://amarcu.github.io/daily-sticky-note/quotes-extra.json'
+      : 'quotes-extra.json';
+    const res = await fetch(url);
     if (!res.ok) return;
     const data = await res.json();
-    const incoming = (data.quotes || [])
-      .map((q) => (q && typeof q.quote === 'string' ? q.quote.trim() : ''))
-      .filter((s) => s.length >= 8 && s.length <= 90 && !s.includes('\n'));
-    if (!incoming.length) return;
-
-    const merged = [...new Set(loadQuoteCache().concat(incoming))].slice(-QUOTE_CACHE_CAP);
-    localStorage.setItem(QUOTE_CACHE_KEY, JSON.stringify(merged));
+    const cache = loadQuoteCache();
+    let added = false;
+    for (const l of LANGS) {
+      const incoming = (Array.isArray(data[l]) ? data[l] : [])
+        .map((s) => (typeof s === 'string' ? s.trim() : ''))
+        // The Title-Case check is English-only: German capitalizes every noun
+        // by grammar, so the heuristic would eat legitimate lines there.
+        .filter((s) => s.length >= 8 && s.length <= 100 && !s.includes('\n') && (l !== 'en' || !looksTitleCased(s)));
+      if (!incoming.length) continue;
+      cache[l] = [...new Set((cache[l] || []).concat(incoming))].slice(-QUOTE_CACHE_CAP);
+      added = true;
+    }
+    if (!added) return;
+    localStorage.setItem(QUOTE_CACHE_KEY, JSON.stringify(cache));
     pickDailyQuote(); // a freshly fetched line can show up right away
   } catch (e) {
     // silent by design
@@ -1471,4 +1492,14 @@ if (savedFirebaseConfig) {
 
 render();
 updateTimerUI(); // tasks are loaded now - a restored session can show its task name
+
+// One-time migration: the old quote cache was filled from a generic-famous-
+// quotes API (Title-Cased Nietzsche is not a gentle nudge). Drop it and clear
+// the throttle so the next refresh rebuilds promptly from the curated source.
+if (localStorage.getItem('stickyPlanner.quoteCache') !== null) {
+  localStorage.removeItem('stickyPlanner.quoteCache');
+  localStorage.removeItem(QUOTE_REFRESHED_KEY);
+  pickDailyQuote(); // today's line may change now that the pool is clean
+}
+
 refreshQuotes(); // fire-and-forget; silently no-ops if throttled or offline
