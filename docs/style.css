@@ -436,6 +436,28 @@ button:focus-visible {
   border: 1px solid var(--line);
   border-radius: 5px;
   background: rgba(255, 255, 255, 0.5);
+  cursor: grab; /* rows can be dragged to reorder */
+}
+
+.task-row button,
+.task-row input[type='checkbox'] {
+  cursor: pointer;
+}
+
+/* The row being drag-sorted: lifted above the list, following the pointer
+   (transform is set inline). */
+.task-row.drag-sorting {
+  position: relative;
+  z-index: 3;
+  background: var(--paper);
+  box-shadow: 0 10px 22px rgba(44, 52, 64, 0.28);
+  cursor: grabbing;
+  animation: none; /* a "due" row's throb would fight the lift shadow */
+}
+
+.task-list.sorting {
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .task-row.due {

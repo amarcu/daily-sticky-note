@@ -3,6 +3,21 @@
 All notable changes to this project are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.6.0]
+
+### Added
+
+- **Drag to reorder tasks**: grab any task row (anywhere but its buttons) and
+  drag it up or down - it lifts with a slight tilt, the other rows slide out of
+  the way, and the order is saved (and synced, with cloud sync on). The list
+  auto-scrolls when you drag near its edges.
+
+### Changed
+
+- Tasks now stay in **your manual order** instead of auto-sorting by time.
+  Time chips and due alerts are unchanged; "Focus next" follows the manual
+  order too. New tasks are added at the end.
+
 ## [1.5.1]
 
 ### Added

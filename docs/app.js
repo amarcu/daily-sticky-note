@@ -94,6 +94,7 @@ let tasks = [];
 let points = 0;
 let awardedIds = new Set();
 let justAddedId = null; // task id to play the "spring in" animation for, once
+let sortDragActive = false; // a task row is being drag-sorted (render() pauses)
 let compact = false; // collapsed to just the header bar
 let onCompactToggle = null; // desktop hook: resize the window to match the collapse
 let notifEnabled = false;
@@ -510,13 +511,10 @@ function startFocusOnTask(taskId) {
   startTimer(lastPickMinutes(), { taskId, kind: 'focus' });
 }
 
-// The next open task to switch to (in the list's time-sorted order), preferring
-// one that isn't the task just finished.
+// The next open task to switch to (in the list's manual order), preferring one
+// that isn't the task just finished.
 function nextOpenTask(excludeId) {
-  const open = tasks
-    .slice()
-    .sort((a, b) => (a.time || 'zz').localeCompare(b.time || 'zz'))
-    .filter((x) => !x.done);
+  const open = tasks.filter((x) => !x.done);
   return open.find((x) => x.id !== excludeId) || null;
 }
 
@@ -978,14 +976,15 @@ function currentHHMM() {
 }
 
 function render() {
+  if (sortDragActive) return; // don't rebuild the list out from under a drag
   taskList.innerHTML = '';
   emptyMsg.style.display = tasks.length ? 'none' : 'block';
   updateCompactCount();
   const nowStr = currentHHMM();
 
-  const sorted = tasks.slice().sort((a, b) => (a.time || 'zz').localeCompare(b.time || 'zz'));
-
-  sorted.forEach((task) => {
+  // Tasks render in the array's order - the order you drag them into. (They
+  // used to auto-sort by time; manual sorting replaces that.)
+  tasks.forEach((task) => {
     const isDue = !task.done && task.time && task.time <= nowStr;
 
     if (isDue && notifEnabled && !notifiedIds.has(task.id)) {
@@ -995,6 +994,7 @@ function render() {
 
     const row = document.createElement('div');
     row.className = 'task-row' + (isDue ? ' due' : '') + (task.done ? ' done' : '');
+    row.dataset.id = task.id;
     if (timerActive && timerKind === 'focus' && task.id === timerTaskId) {
       row.classList.add('focusing');
     }
@@ -1085,6 +1085,114 @@ addBtn.addEventListener('click', () => {
 taskInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') addBtn.click();
 });
+
+// ---- Drag to reorder tasks (kanban-style manual sorting) ----
+// Pointer-based: press a row (not its buttons/checkbox), move a few px to
+// lift it, drag up/down to slot it in - siblings animate out of the way -
+// release to drop. The array order is rebuilt from the DOM and saved/synced.
+
+const DRAG_THRESHOLD = 5;
+let sortRow = null; // row under the pointer since pointerdown
+let sortGrabDelta = 0; // pointer offset inside the row when lifted
+let sortStartX = 0;
+let sortStartY = 0;
+
+// Animate the non-dragged rows from their old slots to their new ones (FLIP).
+function moveRowAnimated(domMove) {
+  const others = [...taskList.querySelectorAll('.task-row:not(.drag-sorting)')];
+  const before = new Map(others.map((r) => [r, r.getBoundingClientRect().top]));
+  domMove();
+  for (const r of others) {
+    const delta = before.get(r) - r.getBoundingClientRect().top;
+    if (delta) {
+      r.animate(
+        [{ transform: `translateY(${delta}px)` }, { transform: 'translateY(0)' }],
+        { duration: 150, easing: 'ease-out' }
+      );
+    }
+  }
+}
+
+function positionSortRow(clientY) {
+  // Follow the pointer: translate relative to the row's untransformed spot.
+  const current = Number(sortRow.dataset.dragY || 0);
+  const baseTop = sortRow.getBoundingClientRect().top - current;
+  const next = clientY - sortGrabDelta - baseTop;
+  sortRow.dataset.dragY = String(next);
+  sortRow.style.transform = `translateY(${next}px) rotate(1.5deg) scale(1.02)`;
+}
+
+function endSortDrag() {
+  if (!sortRow) return;
+  const lifted = sortDragActive;
+  sortRow.classList.remove('drag-sorting');
+  sortRow.style.transform = '';
+  delete sortRow.dataset.dragY;
+  taskList.classList.remove('sorting');
+  sortRow = null;
+  sortDragActive = false;
+  if (!lifted) return; // it was just a click, nothing moved
+  // Rebuild the array in the DOM's new order, then save and repaint.
+  const order = [...taskList.children].map((r) => r.dataset.id);
+  tasks = order.map((id) => tasks.find((x) => x.id === id)).filter(Boolean);
+  scheduleSave();
+  render();
+}
+
+taskList.addEventListener('pointerdown', (e) => {
+  if (e.button !== 0 || e.target.closest('button, input')) return;
+  const row = e.target.closest('.task-row');
+  if (!row) return;
+  sortRow = row;
+  sortStartX = e.clientX;
+  sortStartY = e.clientY;
+  sortGrabDelta = e.clientY - row.getBoundingClientRect().top;
+  try {
+    row.setPointerCapture(e.pointerId);
+  } catch (err) {
+    /* synthetic events have no active pointer - dragging still works */
+  }
+});
+
+taskList.addEventListener('pointermove', (e) => {
+  if (!sortRow) return;
+  if (!sortDragActive) {
+    if (Math.abs(e.clientX - sortStartX) < DRAG_THRESHOLD && Math.abs(e.clientY - sortStartY) < DRAG_THRESHOLD) {
+      return;
+    }
+    sortDragActive = true;
+    sortRow.classList.add('drag-sorting');
+    taskList.classList.add('sorting');
+  }
+  e.preventDefault();
+  positionSortRow(e.clientY);
+
+  // Auto-scroll the (internally scrolling) list near its edges.
+  const listRect = taskList.getBoundingClientRect();
+  if (e.clientY < listRect.top + 20) taskList.scrollTop -= 6;
+  else if (e.clientY > listRect.bottom - 20) taskList.scrollTop += 6;
+
+  // Slot the row in front of the first sibling whose midpoint the pointer is
+  // above; past them all means it goes last.
+  const others = [...taskList.querySelectorAll('.task-row:not(.drag-sorting)')];
+  for (const r of others) {
+    const rect = r.getBoundingClientRect();
+    if (e.clientY < rect.top + rect.height / 2) {
+      if (r.previousElementSibling !== sortRow) {
+        moveRowAnimated(() => taskList.insertBefore(sortRow, r));
+        positionSortRow(e.clientY); // the DOM move shifted its base position
+      }
+      return;
+    }
+  }
+  if (taskList.lastElementChild !== sortRow) {
+    moveRowAnimated(() => taskList.appendChild(sortRow));
+    positionSortRow(e.clientY);
+  }
+});
+
+taskList.addEventListener('pointerup', endSortDrag);
+taskList.addEventListener('pointercancel', endSortDrag);
 
 notifBtn.addEventListener('click', async () => {
   // Already on -> turn it back off. This is the path that was missing before:
