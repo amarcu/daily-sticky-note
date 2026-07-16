@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Get Daily Sticky Note</title>
+<meta name="description" content="Download Daily Sticky Note for macOS, Windows, or Linux - or use it right in your browser." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #fbf6ec;
+    --ink: #2c3440;
+    --ink-soft: #4a5260;
+    --accent: #3b6e71;
+    --accent-soft: #d9e6e5;
+    --muted: #8b8577;
+    --line: #e4dcc8;
+    --desk: #ede9df;
+    --dot: rgba(44, 52, 64, 0.05);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background-color: var(--desk);
+    background-image: radial-gradient(var(--dot) 1px, transparent 1px);
+    background-size: 18px 18px;
+    font-family: 'Inter', system-ui, sans-serif;
+    color: var(--ink);
+    display: flex;
+    justify-content: center;
+    padding: 40px 16px 64px;
+  }
+  .sheet {
+    position: relative;
+    width: 100%;
+    max-width: 560px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 40px 32px 32px;
+    box-shadow: 0 14px 34px rgba(44, 52, 64, 0.14);
+  }
+  .tape {
+    position: absolute;
+    top: -14px;
+    left: 50%;
+    width: 92px;
+    height: 28px;
+    background: var(--accent);
+    opacity: 0.55;
+    transform: translateX(-50%) rotate(-3deg);
+    border-radius: 2px;
+  }
+  h1 {
+    font-family: 'Caveat', cursive;
+    font-size: 52px;
+    margin: 0;
+    line-height: 1;
+  }
+  .tagline { color: var(--ink-soft); margin: 10px 0 0; font-size: 15px; line-height: 1.5; }
+  .features { margin: 18px 0 0; padding: 0 0 0 18px; color: var(--ink-soft); font-size: 14px; line-height: 1.9; }
+  h2 {
+    font-family: 'Caveat', cursive;
+    font-size: 28px;
+    margin: 34px 0 10px;
+    color: var(--accent);
+  }
+  .try-btn, .dl-btn {
+    display: block;
+    text-decoration: none;
+    text-align: center;
+    border-radius: 6px;
+    font-weight: 600;
+  }
+  .try-btn {
+    background: var(--accent);
+    color: var(--paper);
+    padding: 13px;
+    font-size: 15px;
+  }
+  .try-btn:hover { background: #305a5d; }
+  .hint { font-size: 12.5px; color: var(--muted); margin: 8px 0 0; line-height: 1.5; }
+  .os-card {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-top: 12px;
+    background: rgba(255, 255, 255, 0.45);
+  }
+  .os-card.mine {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
+  .os-card.mine::after {
+    content: 'your system';
+    font-size: 11px;
+    color: var(--accent);
+    font-weight: 600;
+    float: right;
+  }
+  .os-name { font-weight: 600; font-size: 14px; }
+  .dl-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .dl-btn {
+    flex: 1 1 auto;
+    min-width: 120px;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    background: var(--paper);
+    padding: 9px 12px;
+    font-size: 13.5px;
+  }
+  .dl-btn:hover { background: var(--accent); color: var(--paper); }
+  .version { color: var(--muted); font-size: 12.5px; margin-top: 16px; }
+  code {
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    background: #2c3440;
+    color: #e8ecef;
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin-top: 8px;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  .footer {
+    margin-top: 34px;
+    padding-top: 14px;
+    border-top: 1px dashed var(--line);
+    font-size: 12.5px;
+    color: var(--muted);
+  }
+  .footer a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="sheet">
+  <div class="tape" aria-hidden="true"></div>
+  <h1>Daily Sticky Note</h1>
+  <p class="tagline">A tiny always-on-top sticky note for your day: tasks with
+  reminders, a Focus Mode timer, points for finishing things, and a gentle
+  daily nudge. Local-first - no account, nothing to set up.</p>
+  <ul class="features">
+    <li>Floats above every window, lives in your tray</li>
+    <li>Focus Mode: pick a task, roll a timer, switch when it rings</li>
+    <li>Drag to reorder, earn points, level up</li>
+    <li>English, Español, Français, Deutsch</li>
+    <li>Updates itself - install once</li>
+  </ul>
+
+  <h2>Use it in your browser</h2>
+  <a class="try-btn" href="../">Open the web app</a>
+  <p class="hint">Nothing to install - tasks stay in this browser.</p>
+
+  <h2>Install the desktop app</h2>
+  <div id="cards">
+    <div class="os-card" data-os="mac">
+      <span class="os-name">macOS</span>
+      <div class="dl-row">
+        <a class="dl-btn" data-match="aarch64.*\.dmg$" href="#">Apple&nbsp;Silicon&nbsp;(.dmg)</a>
+        <a class="dl-btn" data-match="x64.*\.dmg$" href="#">Intel&nbsp;(.dmg)</a>
+      </div>
+      <code>curl -fsSL https://raw.githubusercontent.com/amarcu/daily-sticky-note/main/install.sh | bash</code>
+    </div>
+    <div class="os-card" data-os="win">
+      <span class="os-name">Windows</span>
+      <div class="dl-row">
+        <a class="dl-btn" data-match="setup\.exe$" href="#">Installer&nbsp;(.exe)</a>
+        <a class="dl-btn" data-match="\.msi$" href="#">MSI</a>
+      </div>
+      <code>irm https://raw.githubusercontent.com/amarcu/daily-sticky-note/main/install.ps1 | iex</code>
+    </div>
+    <div class="os-card" data-os="linux">
+      <span class="os-name">Linux</span>
+      <div class="dl-row">
+        <a class="dl-btn" data-match="\.AppImage$" href="#">AppImage</a>
+        <a class="dl-btn" data-match="\.deb$" href="#">.deb</a>
+        <a class="dl-btn" data-match="\.rpm$" href="#">.rpm</a>
+      </div>
+      <code>curl -fsSL https://raw.githubusercontent.com/amarcu/daily-sticky-note/main/install.sh | bash</code>
+    </div>
+  </div>
+  <p class="version" id="version">Fetching the latest version…</p>
+  <p class="hint">These builds are unsigned, so your OS warns once about an
+  "unidentified developer" - right-click&nbsp;&gt;&nbsp;Open on macOS, or
+  "More&nbsp;info&nbsp;&gt;&nbsp;Run&nbsp;anyway" on Windows. After that the
+  app keeps itself up to date.</p>
+
+  <div class="footer">
+    Free &amp; open source (MIT) -
+    <a href="https://github.com/amarcu/daily-sticky-note">source on GitHub</a>
+  </div>
+</div>
+
+<script>
+  // Highlight the visitor's OS.
+  (function () {
+    var ua = navigator.userAgent;
+    var os = /Windows/i.test(ua) ? 'win' : /Mac/i.test(ua) ? 'mac' : /Linux|X11/i.test(ua) ? 'linux' : null;
+    if (os) {
+      var card = document.querySelector('.os-card[data-os="' + os + '"]');
+      if (card) {
+        card.classList.add('mine');
+        card.parentElement.prepend(card);
+      }
+    }
+  })();
+
+  // Point every button at the newest release's assets (GitHub's API is public
+  // and CORS-enabled). If anything fails, fall back to the releases page.
+  (function () {
+    var releasesPage = 'https://github.com/amarcu/daily-sticky-note/releases/latest';
+    function fallback() {
+      document.querySelectorAll('.dl-btn').forEach(function (b) { b.href = releasesPage; });
+      document.getElementById('version').textContent = 'Find the newest installers on the releases page.';
+    }
+    fetch('https://api.github.com/repos/amarcu/daily-sticky-note/releases/latest')
+      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function (rel) {
+        var assets = rel.assets || [];
+        document.querySelectorAll('.dl-btn').forEach(function (b) {
+          var re = new RegExp(b.dataset.match, 'i');
+          var hit = assets.find(function (a) { return re.test(a.name); });
+          b.href = hit ? hit.browser_download_url : releasesPage;
+        });
+        document.getElementById('version').textContent =
+          'Latest version: ' + (rel.tag_name || '').replace(/^v/, '') + ' - installs in under a minute.';
+      })
+      .catch(fallback);
+  })();
+</script>
+</body>
+</html>

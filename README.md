@@ -41,7 +41,15 @@ Either way, cloud sync is opt-in and configured at runtime - see
 
 ## Install the desktop app
 
-Prebuilt installers for **macOS, Windows, and Linux** are on the
+**Sharing the app with someone?** Send them the public install page - no
+GitHub account or technical steps needed:
+
+> **https://amarcu.github.io/daily-sticky-note/get/**
+
+It offers the in-browser version plus one-click downloads for macOS,
+Windows, and Linux, always pointing at the newest release.
+
+Prebuilt installers are also on the
 [Releases page](https://github.com/amarcu/daily-sticky-note/releases) -
 download the one for your platform and run it. No toolchain needed.
 
