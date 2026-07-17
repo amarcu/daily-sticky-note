@@ -85,6 +85,28 @@ downloads, installs, and relaunches into it in one click. Nothing to
 re-run. (The one-liners above still work any time you'd rather update by
 hand.)
 
+### Linux notes (Ubuntu and friends)
+
+Linux builds target x86_64 and are built on Ubuntu 22.04. Pick your format:
+
+- **AppImage** (what the one-liner installs): runs anywhere, and it's the
+  only Linux format the **in-app auto-updater** can update. Best default.
+- **.deb**: `sudo apt install ./Daily.Sticky.Note_<version>_amd64.deb` -
+  proper app-menu entry and icons, and apt pulls in the dependencies
+  (`libwebkit2gtk-4.1-0`, `libappindicator3-1`, `libgtk-3-0`). Updates are
+  manual though - the in-app updater can't replace apt-managed files, so
+  grab new versions from the install page. Same for the **.rpm**.
+
+Two desktop quirks to know:
+
+- **Tray icon**: stock Ubuntu shows it out of the box (its AppIndicator
+  extension ships enabled). On vanilla GNOME distros (e.g. Fedora), install
+  the "AppIndicator and KStatusNotifierItem Support" GNOME extension or
+  the tray icon won't appear.
+- **Global shortcut** (`Ctrl+Shift+D`): works on X11; on **Wayland**
+  sessions GNOME doesn't let apps register global shortcuts, so use the
+  tray icon to show/hide instead.
+
 ## Deploy the web version (optional)
 
 1. Push this folder to a GitHub repo.
